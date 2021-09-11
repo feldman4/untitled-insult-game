@@ -1,2 +1,4 @@
-PORT = 1234
+PORT = 1240
 TIMEOUT = 0.01
+
+START = 'fire it up'

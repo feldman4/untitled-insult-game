@@ -1,10 +1,10 @@
+import json
 import socket
 
 from curtsies import FullscreenWindow, Input, FSArray
 from curtsies.fmtfuncs import red, blue, bold, green, on_blue, yellow
 
-from game.comm import connect_socket
-
+from game.comm import connect_socket, send_start, send_string
 
 def init():
     model = {
@@ -14,9 +14,8 @@ def init():
         'log': '',
         'candidates': [],
         'allowed': ['apple', 'appman', 'banana'],
-        'socket': None,x
+        'socket': None,
     }
-
     return model
 
 
@@ -29,17 +28,9 @@ def run():
             if model['socket'] == None:
                 try:
                     model['socket'] = connect_socket()
-                except socket.timeout:
+                except (socket.timeout, ConnectionRefusedError):
                     model['socket'] = None
-            if model['socket'] != None:
-                try:
-                    # read from socket
-                    incoming = model['socket'].recv(1024).decode()
-                    if incoming:
-                        model['log'] += ' | ' + incoming
-                except socket.timeout:
-                    pass
-                
+            handle_incoming(model)
             
             old_model = model.copy()
             c = input_generator.send(1)
@@ -52,6 +43,26 @@ def run():
             view(model, window)
 
 
+def handle_incoming(model):
+    if model['socket'] != None:
+        try:
+            # read from socket
+            incoming = model['socket'].recv(1000000).decode()
+            message = json.loads(incoming)
+            if message['kind'] == 'level_start':
+                model['log'] = 'received level_start'
+                return level_start(model, message['content'])
+        except socket.timeout:
+            pass
+    return model
+
+
+def level_start(model, content):
+    for key in content:
+        model[key] = content[key]
+    return model
+
+
 def handle_key(model, c):
     m = model
     if c == None:
@@ -62,14 +73,30 @@ def handle_key(model, c):
 
     m = update_candidates(m)
 
+    # special start string
+    if c == '1':
+        send_start(m['socket'])
+
     if c == '<SPACE>':
         if len(m['candidates']) == 1:
             m['buffer'] = m['candidates'][0]
         if m['buffer'] in m['allowed']:
-            m['last'] = m['buffer']
+            word = m['buffer']
+            m['last'] = word
             m['buffer'] = ''
             m['candidates'] = m['allowed']
+            send_string(m['socket'], word)
+
     return m
+
+
+def send_last(model):
+    m = model
+    if m['socket'] != None:
+        try:
+            m['socket'].send(m['last'].encode())
+        except socket.timeout:
+            pass
 
 
 def view(model, window):
