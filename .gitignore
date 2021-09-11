@@ -139,3 +139,4 @@ docs/slides/.xsession-errors
 # DF
 .DS_Store
 DF/notebooks/home
+DF/notebooks/*ipynb
