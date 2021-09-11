@@ -140,3 +140,6 @@ docs/slides/.xsession-errors
 .DS_Store
 DF/notebooks/home
 DF/notebooks/*ipynb
+*.gv
+*.gv.pdf
+test.html

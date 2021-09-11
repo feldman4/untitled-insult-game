@@ -4,6 +4,7 @@ import json
 from game.constants import *
 from game.comm import send_string, receive_string, get_new_client, create_server
 from game.actors import Player, Enemy
+from game.levels import example_world
 
 """
 socket problems
@@ -12,41 +13,21 @@ socket problems
 """
 
 
-vestibule = {
-    'header': 'Choose your destiny',
-    'choices': ['A: fight moron', 'B: fight asshole']
-}
-level_1 = {
-    'header': 'THE MORON: drool runs equally out both sides of his mouth', 
-    'enemy': 'moron',
-}
-level_2 = {
-    'header': 'THE ASSHOLE: his Boxter is parked on your front lawn', 
-    'enemy': 'asshole',
-}
-hell = {
-    'header': 'You died. This is mute hell.',
-    'choices': [],
-}
-
 enemies = {
     'moron': Enemy(hp=3, xp=10, weakness='intelligence'),
     'asshole': Enemy(hp=3, xp=10, weakness='intelligence'),
 }
 
-links = {
-    'A: fight moron': level_1,
-    'B: fight asshole': level_2,
-    }
-
-
-def init(client):
+def init(client, world=example_world):
     player = Player(hp=40, weakness='weight')
-    player.vocabulary = ['idiot', 'fatso', 'streber', 'moron', 'chucklehead']
+    player.vocabulary = ['idiot', 'fatso', 'streber', 
+                         'moron', 'chucklehead']
+    first_level = list(world.values())[0]['name']
     model = {
-        'level': vestibule, 
         'client': client, 
         'player': player,
+        'world': world,
+        'level': first_level, # start on first level
     }
     return model
 
@@ -77,8 +58,8 @@ def handle_message(model, message):
         print('START TRANSITION')
         transition(model, level_1)
     # TRANSITION ROOMS
-    elif message in links:
-        transition(model, links[message])
+    elif message in m['world']:
+        transition(model, message)
     # AN INSULT CAME IN
     else:
         m = model
@@ -89,7 +70,8 @@ def handle_message(model, message):
             # victory
             m['player'].xp += enemy.xp
             m['player'].current_enemy = None
-            transition(m, vestibule)
+            first_level = list(worlds.values())[0]
+            transition(m, first_level)
         else:
             enemy_insult, enemy_response = enemy.respond()
             m['player'].take_mental_damage(enemy_response)
@@ -102,21 +84,25 @@ def handle_message(model, message):
     return m
 
 
-def transition(model, level):
-    """Transition the model to the level, then send the level to the front end.
+def transition(model, level_name):
+    """Transition the model to the level, then send the 
+    level to the front end.
     """
-    model['level'] = level
-    print('Transitioning to', level)
+    m = model
+    m['level'] = level_name
+    level = m['world'][level_name]
+    print('Transitioning to', level_name)
     if 'enemy' in level:
         enemy = enemies[level['enemy']]
-        model['player'].current_enemy = enemy
+        m['player'].current_enemy = enemy
     level_send(model)
 
 
 def level_send(model):
     """Send level info to the front end.
     """
-    level = model['level']
+    m = model
+    level = m['world'][m['level']]
     content = {'header': level['header']}
     if 'choices' in level:
         content['choices'] = level['choices']
@@ -128,6 +114,4 @@ def level_send(model):
     })
     send_string(model['client'], msg)
     print('sent', msg)
-    
-
 

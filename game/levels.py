@@ -34,3 +34,22 @@ def parse_world(world):
     return d
     
 
+
+example_world = dict(
+vestibule = {
+    'header': 'Choose your destiny',
+    'choices': ['A: fight moron', 'B: fight asshole'],
+},
+level_1 = {
+    'header': 'THE MORON: drool runs equally out both sides of his mouth', 
+    'enemy': 'moron',
+},
+level_2 = {
+    'header': 'THE ASSHOLE: his Boxter is parked on your front lawn', 
+    'enemy': 'asshole',
+},
+hell = {
+    'header': 'You died. This is mute hell.',
+    'choices': [],
+},
+)
