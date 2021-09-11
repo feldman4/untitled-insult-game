@@ -4,20 +4,7 @@ from typing import Tuple
 from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
-
-insult_dict = {
-    "idiot": (3, "intelligence"),
-    "fatso": (5, "weight"),
-    "streber": (7, "personality"),
-}
-
-level_mapper = {
-    2: 30,
-    3: 90,
-    4: 270,
-    5: 650,
-    6: 1400,
-}
+from game.constants import vocab_dict, level_mapper, PERSONALITY, INTELLIGENCE, WEIGHT
 
 
 class Actor(metaclass=ABCMeta):
@@ -60,18 +47,27 @@ class Enemy(Actor):
     @staticmethod
     def respond() -> Tuple[str, Tuple[int, str]]:
         """Randomly selects from allowed insults and returns insult, damage value, and damage type."""
-        options = list(insult_dict.keys())
+        options = list(vocab_dict.keys())
         response_choice = random.choice(options)
-        return response_choice, insult_dict[response_choice]
+        return response_choice, vocab_dict[response_choice]
 
 
 class Player(Actor):
 
-    def __init__(self, hp: int, weakness: str):
+    def __init__(self, hp: int, weakness: str, level: int = 1):
         super().__init__(hp=hp, weakness=weakness)
-        self.level = 1
-        self.xp = 0
+        self.level = level
+        self.xp = level_mapper[self.level]
+        self.vocabulary = self.__build_vocabulary()
+
         self.current_enemy = None
+
+    def __build_vocabulary(self) -> list:
+        """Compile all known words based on level."""
+        available_words = []
+        for i in range(1, self.level + 1):
+            available_words += vocab_dict[i].keys()
+        return available_words
 
     def trigger_encounter(self, target: Enemy):
         """Set encounter state to True."""
@@ -111,7 +107,7 @@ class Player(Actor):
     def respond() -> Tuple[int, str]:
         """Player enters verbal response from predefined list. Returns accepted response and insult type."""
 
-        allowed_words = insult_dict.keys()
+        allowed_words = vocab_dict.keys()
         print(" ".join(allowed_words))
         player_input = input("Please enter your insult: ")
 
@@ -122,11 +118,11 @@ class Player(Actor):
             print(f"Word not allowed! Please choose from the following: {' '.join(allowed_words)}")
             player_input = input("New insult: ")
 
-        return insult_dict[player_input]
+        return vocab_dict[player_input]
 
 
 if __name__ == "__main__":
-    player = Player(hp=100, weakness="intelligence")
-    enemy = Enemy(hp=10, xp=50, weakness="personality")
+    player = Player(hp=100, weakness=INTELLIGENCE)
+    enemy = Enemy(hp=10, xp=50, weakness=PERSONALITY)
 
     player.trigger_encounter(enemy)
