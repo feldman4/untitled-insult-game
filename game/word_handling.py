@@ -2,6 +2,12 @@ import gensim
 import math
 
 
+# Initialize database
+def init_word_scores():
+    import gensim.downloader as api
+    return api.load('glove-twitter-25')
+
+
 def score_words(attack_word: str, defense_word: str, model: gensim.models.keyedvectors.KeyedVectors) -> float:
     """Calculates similarity between the two input words, or an input sentence and a word based on the input model"""
 
