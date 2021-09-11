@@ -14,21 +14,19 @@ socket problems
 
 vestibule = {
     'header': 'Choose your destiny',
-    'allowed': ['A: fight moron', 'B: fight asshole']
+    'choices': ['A: fight moron', 'B: fight asshole']
 }
 level_1 = {
     'header': 'THE MORON: drool runs equally out both sides of his mouth', 
-    'allowed': ['apostate', 'apiculturist', 'bandito'],
     'enemy': 'moron',
 }
 level_2 = {
     'header': 'THE ASSHOLE: his Boxter is parked on your front lawn', 
-    'allowed': ['pedo', 'loser'],
     'enemy': 'asshole',
 }
 hell = {
     'header': 'You died. This is mute hell.',
-    'allowed': [],
+    'choices': [],
 }
 
 enemies = {
@@ -43,11 +41,12 @@ links = {
 
 
 def init(client):
+    player = Player(hp=40, weakness='weight')
+    player.vocabulary = ['idiot', 'fatso', 'streber', 'moron', 'chucklehead']
     model = {
         'level': vestibule, 
         'client': client, 
-        'player': Player(hp=10, weakness='weight'),
-
+        'player': player,
     }
     return model
 
@@ -104,6 +103,8 @@ def handle_message(model, message):
 
 
 def transition(model, level):
+    """Transition the model to the level, then send the level to the front end.
+    """
     model['level'] = level
     print('Transitioning to', level)
     if 'enemy' in level:
@@ -113,9 +114,17 @@ def transition(model, level):
 
 
 def level_send(model):
+    """Send level info to the front end.
+    """
+    level = model['level']
+    content = {'header': level['header']}
+    if 'choices' in level:
+        content['choices'] = level['choices']
+    else:
+        content['choices'] = model['player'].vocabulary
     msg = json.dumps({
         'kind': 'level_start',
-        'content': model['level'],
+        'content': content,
     })
     send_string(model['client'], msg)
     print('sent', msg)

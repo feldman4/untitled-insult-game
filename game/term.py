@@ -13,7 +13,7 @@ def init():
         'last': '',
         'log': '',
         'candidates': [],
-        'allowed': ['apple', 'appman', 'banana'],
+        'choices': ['apple', 'appman', 'banana'],
         'socket': None,
     }
     return model
@@ -70,7 +70,7 @@ def handle_key(model, c):
     if c == None:
         return model
 
-    if any(x.startswith(m['buffer'] + c) for x in m['allowed']):
+    if any(x.startswith(m['buffer'] + c) for x in m['choices']):
         m['buffer'] += c
 
     m = update_candidates(m)
@@ -82,11 +82,11 @@ def handle_key(model, c):
     if c == '<SPACE>':
         if len(m['candidates']) == 1:
             m['buffer'] = m['candidates'][0]
-        if m['buffer'] in m['allowed']:
+        if m['buffer'] in m['choices']:
             word = m['buffer']
             m['last'] = word
             m['buffer'] = ''
-            m['candidates'] = m['allowed']
+            m['candidates'] = m['choices']
             send_string(m['socket'], word)
 
     return m
@@ -122,7 +122,7 @@ def view(model, window):
 
 
 def update_candidates(model):
-    model['candidates'] = [x for x in model['allowed'] 
+    model['candidates'] = [x for x in model['choices'] 
                            if x.startswith(model['buffer'])]
     return model
 
