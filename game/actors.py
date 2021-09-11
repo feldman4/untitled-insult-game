@@ -64,6 +64,7 @@ class Player(Actor):
         if self.xp >= level_mapper[self.level + 1]:
             self.level += 1
             print(f"LEVEL UP: {self.level}")
+            self.vocabulary += vocab_dict.loc[vocab_dict['level'] == self.level, ["word"]].word.to_list()
 
     def repartee(self, target: Enemy):
         """Main verbal battle method."""
