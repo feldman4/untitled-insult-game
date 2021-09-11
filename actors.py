@@ -27,6 +27,11 @@ class Actor(metaclass=ABCMeta):
         else:
             self.hp -= dmg_value
 
+    @staticmethod
+    @abstractmethod
+    def respond():
+        pass
+
 
 class Enemy(Actor):
 
@@ -34,7 +39,7 @@ class Enemy(Actor):
         super().__init__(hp=hp, weakness=weakness)
 
     @staticmethod
-    def respond_to_player() -> Tuple[str, Tuple[int, str]]:
+    def respond() -> Tuple[str, Tuple[int, str]]:
         """Randomly selects from allowed insults and returns insult, damage value, and damage type."""
         options = list(insult_dict.keys())
         response_choice = random.choice(options)
@@ -62,11 +67,11 @@ class Player(Actor):
             print(f"Enemy mental health: {target.hp}")
 
             # Player inputs response and applies damage to enemy
-            player_response = self.choose_response()
+            player_response = self.respond()
             target.take_mental_damage(player_response)
 
             # Enemy randomly selects insult and applies damage to player
-            enemy_insult, enemy_response = target.respond_to_player()
+            enemy_insult, enemy_response = target.respond()
             print(f"Your enemy said: {enemy_insult}!")
             self.take_mental_damage(enemy_response)
 
@@ -77,7 +82,7 @@ class Player(Actor):
             print("You have schooled your foe.")
 
     @staticmethod
-    def choose_response() -> Tuple[int, str]:
+    def respond() -> Tuple[int, str]:
         """Player enters verbal response from predefined list. Returns accepted response and insult type."""
 
         allowed_words = insult_dict.keys()
