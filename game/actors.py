@@ -13,24 +13,17 @@ class Actor(metaclass=ABCMeta):
         self.hp = hp
         self.weakness = weakness
 
-    def take_mental_damage(self, dmg_pair: Tuple[int, str]):
+    def take_mental_damage(self, insult: str):
         """Take a certain amount of mental damage. If damage type matches weakness, take double damage."""
-        dmg_value, dmg_type = dmg_pair
+        dmg_data = vocab_dict.loc[vocab_dict["word"] == insult, ["damage", "damage_type"]]
+        damage_value = dmg_data.damage.iloc[0]
+        damage_type = dmg_data.damage_type.iloc[0]
 
-        if dmg_type == self.weakness:
-            self.hp -= 1.5 * dmg_value
-
-        else:
-            self.hp -= dmg_value
-
-    def take_mental_damage2(self, insult: str):
-        """Take damage from a word."""
-
-        if insult == self.weakness:
-            self.hp -= 1.5
+        if damage_type == self.weakness:
+            self.hp -= 1.5 * damage_value
 
         else:
-            self.hp -= 1
+            self.hp -= damage_value
 
     @staticmethod
     @abstractmethod
@@ -45,11 +38,11 @@ class Enemy(Actor):
         self.xp = xp
 
     @staticmethod
-    def respond() -> Tuple[str, Tuple[int, str]]:
+    def respond() -> str:
         """Randomly selects from allowed insults and returns insult, damage value, and damage type."""
-        options = list(vocab_dict.keys())
+        options = list(vocab_dict.word)
         response_choice = random.choice(options)
-        return response_choice, vocab_dict[response_choice]
+        return response_choice
 
 
 class Player(Actor):
@@ -58,16 +51,9 @@ class Player(Actor):
         super().__init__(hp=hp, weakness=weakness)
         self.level = level
         self.xp = level_mapper[self.level]
-        self.vocabulary = self.__build_vocabulary()
+        self.vocabulary = vocab_dict.loc[vocab_dict['level'] <= self.level, ["word"]].word.to_list()
 
         self.current_enemy = None
-
-    def __build_vocabulary(self) -> list:
-        """Compile all known words based on level."""
-        available_words = []
-        for i in range(1, self.level + 1):
-            available_words += vocab_dict[i].keys()
-        return available_words
 
     def trigger_encounter(self, target: Enemy):
         """Set encounter state to True."""
@@ -91,8 +77,8 @@ class Player(Actor):
             target.take_mental_damage(player_response)
 
             # Enemy randomly selects insult and applies damage to player
-            enemy_insult, enemy_response = target.respond()
-            print(colorize("red", f"Your enemy said: {enemy_insult}!"))
+            enemy_response = target.respond()
+            print(colorize("red", f"Your enemy said: {enemy_response}!"))
             self.take_mental_damage(enemy_response)
 
         if self.hp <= 0:  # You died
@@ -103,11 +89,10 @@ class Player(Actor):
             self.xp += target.xp  # Gain XP based on foe slain
             self.check_level_up()
 
-    @staticmethod
-    def respond() -> Tuple[int, str]:
+    def respond(self) -> str:
         """Player enters verbal response from predefined list. Returns accepted response and insult type."""
 
-        allowed_words = vocab_dict.keys()
+        allowed_words = self.vocabulary
         print(" ".join(allowed_words))
         player_input = input("Please enter your insult: ")
 
@@ -118,7 +103,7 @@ class Player(Actor):
             print(f"Word not allowed! Please choose from the following: {' '.join(allowed_words)}")
             player_input = input("New insult: ")
 
-        return vocab_dict[player_input]
+        return player_input
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+import pandas as pd
+
 PORT = 1241
 TIMEOUT = 0.01
 
@@ -7,18 +9,17 @@ INTELLIGENCE = "intelligence"
 WEIGHT = "weight"
 PERSONALITY = "personality"
 
-vocab_dict = {
-    1: {
-        "idiot": (3, INTELLIGENCE),
-        "fatso": (5, WEIGHT),
-        "streber": (7, PERSONALITY),
-    },
-    2: {
-        "swine": (6, WEIGHT),
-        "ignoramous": (5, INTELLIGENCE),
-        "pariah": (7, PERSONALITY)
-    },
-}
+
+vocab_dict = pd.DataFrame(
+    [
+        {"word": "idiot", "level": 1, "damage": 3, "damage_type": INTELLIGENCE},
+        {"word": "fatso", "level": 1, "damage": 5, "damage_type": WEIGHT},
+        {"word": "streber", "level": 1, "damage": 7, "damage_type": PERSONALITY},
+        {"word": "swine", "level": 2, "damage": 6, "damage_type": WEIGHT},
+        {"word": "ignoramous", "level": 2, "damage": 5, "damage_type": INTELLIGENCE},
+        {"word": "pariah", "level": 2, "damage": 7, "damage_type": PERSONALITY},
+    ]
+)
 
 level_mapper = {
     1: 0,
