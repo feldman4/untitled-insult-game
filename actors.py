@@ -1,6 +1,7 @@
 import random
 
 from typing import Tuple
+from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
 
@@ -76,8 +77,8 @@ class Player(Actor):
         """Main verbal battle method."""
         while self.hp > 0 and target.hp > 0:
             # Show health
-            print(f"Your mental health: {self.hp}")
-            print(f"Enemy mental health: {target.hp}")
+            print(colorize("green", f"Your mental health: {self.hp}"))
+            print(colorize("purple", f"Enemy mental health: {target.hp}"))
 
             # Player inputs response and applies damage to enemy
             player_response = self.respond()
@@ -85,11 +86,11 @@ class Player(Actor):
 
             # Enemy randomly selects insult and applies damage to player
             enemy_insult, enemy_response = target.respond()
-            print(f"Your enemy said: {enemy_insult}!")
+            print(colorize("red", f"Your enemy said: {enemy_insult}!"))
             self.take_mental_damage(enemy_response)
 
-        if self.hp <= 0:
-            print("You have been pwned")
+        if self.hp <= 0:  # You died
+            print(colorize("red", "You have been pwned!\nGAME OVER"))
 
         else:
             print("You have schooled your foe.")

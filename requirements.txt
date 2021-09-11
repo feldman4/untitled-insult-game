@@ -1,3 +1,4 @@
 pandas
 curtsies
 fire
+pygments
