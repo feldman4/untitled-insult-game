@@ -104,7 +104,7 @@ def send_last(model):
 def view(model, window):
     m = model
     a = FSArray(window.height, window.width)
-    first_row = red('{header} {last}'.format(**model))
+    first_row = red('{header}'.format(**model))
     second_row = blue(m['buffer'])
     third_row = green(' '.join(m['candidates']))
     fourth_row = red('LOG: ' + m['log'])
