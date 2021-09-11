@@ -1,9 +1,11 @@
 import fire
 import sys
 
+
 def term():
     from game import term
     term.run()
+
 
 def server():
     from game import server
