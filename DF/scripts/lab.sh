@@ -1,3 +1,3 @@
 home=DF
-cd notebooks
-PYTHONPATH=$home/src:$PYTHONPATH jupyter lab
+cd DF/notebooks
+PYTHONPATH=../src:$PYTHONPATH jupyter lab

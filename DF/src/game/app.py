@@ -1,12 +1,13 @@
 import fire
 import sys
 
-def term(sockets=False):
+def term():
     from game import term
-    term.run(sockets=sockets)
+    term.run()
 
-def sockets():
-    from game import sockets
+def server():
+    from game import server
+    server.run()
 
 if __name__ == '__main__':
     fire.Fire()
