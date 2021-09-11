@@ -10,6 +10,14 @@ insult_dict = {
     "streber": (7, "personality"),
 }
 
+level_mapper = {
+    2: 30,
+    3: 90,
+    4: 270,
+    5: 650,
+    6: 1400,
+}
+
 
 class Actor(metaclass=ABCMeta):
 
@@ -35,8 +43,9 @@ class Actor(metaclass=ABCMeta):
 
 class Enemy(Actor):
 
-    def __init__(self, hp: int, weakness: str):
+    def __init__(self, hp: int, xp: int, weakness: str):
         super().__init__(hp=hp, weakness=weakness)
+        self.xp = xp
 
     @staticmethod
     def respond() -> Tuple[str, Tuple[int, str]]:
@@ -50,14 +59,18 @@ class Player(Actor):
 
     def __init__(self, hp: int, weakness: str):
         super().__init__(hp=hp, weakness=weakness)
-
-    def insult(self, target: Actor):
-        """Insults the NPC."""
-        pass
+        self.level = 1
+        self.xp = 0
 
     def trigger_encounter(self, target: Enemy):
         """Set encounter state to True."""
         self.repartee(target=target)
+
+    def check_level_up(self):
+        """Checks current XP against requirements for leveling up."""
+        if self.xp >= level_mapper[self.level + 1]:
+            self.level += 1
+            print(f"LEVEL UP: {self.level}")
 
     def repartee(self, target: Enemy):
         """Main verbal battle method."""
@@ -80,6 +93,8 @@ class Player(Actor):
 
         else:
             print("You have schooled your foe.")
+            self.xp += target.xp  # Gain XP based on foe slain
+            self.check_level_up()
 
     @staticmethod
     def respond() -> Tuple[int, str]:
@@ -100,7 +115,7 @@ class Player(Actor):
 
 
 if __name__ == "__main__":
-    player = Player(hp=10, weakness="intelligence")
-    enemy = Enemy(hp=10, weakness="personality")
+    player = Player(hp=100, weakness="intelligence")
+    enemy = Enemy(hp=10, xp=50, weakness="personality")
 
     player.trigger_encounter(enemy)
