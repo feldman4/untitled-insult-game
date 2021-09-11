@@ -1,3 +1,3 @@
-home=/Users/feldman/packages/bonn-game
+home=DF
 cd notebooks
 PYTHONPATH=$home/src:$PYTHONPATH jupyter lab
