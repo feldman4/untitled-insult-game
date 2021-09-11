@@ -3,7 +3,6 @@ import socket
 from curtsies import FullscreenWindow, Input, FSArray
 from curtsies.fmtfuncs import red, blue, bold, green, on_blue, yellow
 
-from game.constants import PORT, TIMEOUT
 from game.comm import connect_socket
 
 
@@ -15,7 +14,7 @@ def init():
         'log': '',
         'candidates': [],
         'allowed': ['apple', 'appman', 'banana'],
-        'socket': None,
+        'socket': None,x
     }
 
     return model

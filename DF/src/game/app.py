@@ -9,5 +9,6 @@ def server():
     from game import server
     server.run()
 
+
 if __name__ == '__main__':
     fire.Fire()
