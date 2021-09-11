@@ -78,7 +78,7 @@ class Player(Actor):
         while self.hp > 0 and target.hp > 0:
             # Show health
             print(colorize("green", f"Your mental health: {self.hp}"))
-            print(colorize("purple", f"Enemy mental health: {target.hp}"))
+            print(colorize("yellow", f"Enemy mental health: {target.hp}"))
 
             # Player inputs response and applies damage to enemy
             player_response = self.respond()
