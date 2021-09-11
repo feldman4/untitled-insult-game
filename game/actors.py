@@ -36,6 +36,15 @@ class Actor(metaclass=ABCMeta):
         else:
             self.hp -= dmg_value
 
+    def take_mental_damage2(self, insult: str):
+        """Take damage from a word."""
+
+        if insult == self.weakness:
+            self.hp -= 1.5
+
+        else:
+            self.hp -= 1
+
     @staticmethod
     @abstractmethod
     def respond():
@@ -62,6 +71,7 @@ class Player(Actor):
         super().__init__(hp=hp, weakness=weakness)
         self.level = 1
         self.xp = 0
+        self.current_enemy = None
 
     def trigger_encounter(self, target: Enemy):
         """Set encounter state to True."""
