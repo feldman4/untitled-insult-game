@@ -5,3 +5,4 @@ IPython.get_ipython().run_line_magic('autoreload', '2')
 IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 
 from game import app, term
+from game.constants import *

@@ -1,1 +1,2 @@
 PORT = 1234
+TIMEOUT = 0.01
