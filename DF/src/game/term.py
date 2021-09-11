@@ -20,17 +20,18 @@ def add_header(a):
 def add_to_second_line(a, msg):
     a[2, 0:len(msg)] = [red(msg)]
 
-def run():
+def run(sockets=False):
     header = 'Type your shit:'
     buffer = ''
     last = ''
     log = 'LOG'
     candidates = allowed
     
-    client = socket.socket()
-    address=("localhost", PORT)
-    client.connect(address)
-    client.settimeout(0.1)
+    if sockets:
+        client = socket.socket()
+        address=("localhost", PORT)
+        client.connect(address)
+        client.settimeout(0.1)
 
     with FullscreenWindow() as window, Input() as input_generator:
         while True:
@@ -64,10 +65,11 @@ def run():
                     buffer = ''
                     candidates = allowed
 
-            # read from socket
-            incoming = client.recv(1024).decode()
-            if incoming:
-                log += ' | ' + incoming
+            if sockets:
+                # read from socket
+                incoming = client.recv(1024).decode()
+                if incoming:
+                    log += ' | ' + incoming
 
 
 
