@@ -4,7 +4,7 @@ import json
 from game.constants import *
 from game.comm import send_string, receive_string, get_new_client, create_server
 from game.actors import Player, Enemy
-from game.levels import example_world
+from game.levels import load_world
 
 """
 socket problems
@@ -14,20 +14,23 @@ socket problems
 
 
 enemies = {
-    'moron': Enemy(hp=3, xp=10, weakness='intelligence'),
-    'asshole': Enemy(hp=3, xp=10, weakness='intelligence'),
+    'moron': Enemy(hp=20, xp=10, weakness='intelligence'),
+    'asshole': Enemy(hp=20, xp=10, weakness='intelligence'),
 }
 
-def init(client, world=example_world):
+def init(client):
+    world = load_world()
     player = Player(hp=40, weakness='weight')
+    # should be a column from the vocab sheet
     player.vocabulary = ['idiot', 'fatso', 'streber', 
-                         'moron', 'chucklehead']
-    first_level = list(world.values())[0]['name']
+                         'moron']
+    first_level = list(world)[0]
     model = {
         'client': client, 
         'player': player,
         'world': world,
         'level': first_level, # start on first level
+        'status': '<init>',
     }
     return model
 
@@ -36,7 +39,6 @@ def init(client, world=example_world):
 def run():
     server = create_server()
     models = []
-    i = 0
     while True:
         new_client = get_new_client(server)
         if new_client != None:
@@ -46,8 +48,9 @@ def run():
         for i, m in enumerate(models):
             message = receive_string(m['client'])
             if message:
-                print(f'Heard {message} from client {i}')
+                print(f'RECEIVE ({i}): {message}')
                 models[i] = handle_message(m, message)
+                send_model(models[i])
 
 
 # model -> message -> model
@@ -56,7 +59,8 @@ def handle_message(model, message):
     # START THE GAME
     if message == START:
         print('START TRANSITION')
-        transition(model, level_1)
+        m['status'] = 'started'
+        transition(model, 'basement')
     # TRANSITION ROOMS
     elif message in m['world']:
         transition(model, message)
@@ -64,23 +68,26 @@ def handle_message(model, message):
     else:
         m = model
         enemy = m['player'].current_enemy
-        print('Player insults with:', message)
-        enemy.take_mental_damage2(message)
+        first_hp = enemy.hp
+        enemy.take_mental_damage(message)
+        print(f'Player insults with {message}: enemy HP {first_hp}=>{enemy.hp}')
+        # victory
         if enemy.hp <= 0:
-            # victory
             m['player'].xp += enemy.xp
             m['player'].current_enemy = None
-            first_level = list(worlds.values())[0]
+            first_level = list(m['world'])[0]
+            m['status'] = 'Victory!'
             transition(m, first_level)
         else:
-            enemy_insult, enemy_response = enemy.respond()
-            m['player'].take_mental_damage(enemy_response)
+            # death
+            enemy_insult = enemy.respond()
+            m['player'].take_mental_damage(enemy_insult)
             if m['player'].hp <= 0:
                 transition(model, hell)
             else:
                 # hack to show enemy insult
-                m['level']['header'] = f'HP: {m["player"].hp}; Enemy says {enemy_insult}'
-                level_send(model)
+                m['status'] = f'Enemy says {enemy_insult}'
+                
     return m
 
 
@@ -95,23 +102,39 @@ def transition(model, level_name):
     if 'enemy' in level:
         enemy = enemies[level['enemy']]
         m['player'].current_enemy = enemy
-    level_send(model)
 
 
-def level_send(model):
-    """Send level info to the front end.
+def format_header(model):
+    m = model
+    info = {
+        'LEVEL': m['level'],
+        'STATUS': m['status'], 
+        'PLAYER HP': m['player'].hp,
+    }
+
+    enemy = m['player'].current_enemy
+    if enemy != None:
+        info['ENEMY HP'] = enemy.hp
+        
+    return ' | '.join([f'{k}={v}' for k,v in info.items()])
+
+
+def send_model(model):
+    """Send info to the front end.
     """
     m = model
+    content = {'header': format_header(model)}
+    
+    # determine user's text choices
     level = m['world'][m['level']]
-    content = {'header': level['header']}
     if 'choices' in level:
         content['choices'] = level['choices']
     else:
         content['choices'] = model['player'].vocabulary
+
     msg = json.dumps({
-        'kind': 'level_start',
+        'kind': 'model_send',
         'content': content,
     })
     send_string(model['client'], msg)
-    print('sent', msg)
 
