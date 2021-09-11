@@ -48,6 +48,8 @@ def handle_incoming(model):
         try:
             # read from socket
             incoming = model['socket'].recv(1000000).decode()
+            if not incoming:
+                return model
             message = json.loads(incoming)
             if message['kind'] == 'level_start':
                 model['log'] = 'received level_start'
