@@ -135,3 +135,6 @@ ebel.code-workspace
 notebooks/test_graphviz/api_path_search_pics/
 notebooks/old
 docs/slides/.xsession-errors
+
+# DF
+.DS_Store
