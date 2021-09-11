@@ -1,6 +1,7 @@
 import json
 import re
 
+
 def load_world(name='test'):
     with open(f'DF/twine/{name}.json', 'r') as fh:
         return parse_world(json.load(fh))

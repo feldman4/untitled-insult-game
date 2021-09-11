@@ -19,7 +19,12 @@ def update_vocab():
     sheet_id = '1lkxMe_MYYsi8ecTe-otTqaHLAuM0Mu2ALTNaIzZANrI'
     sheet_name = 'grammars'
     url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
-    pd.read_csv(url).to_csv(local, index=None)
+    (pd.read_csv(url)
+    .dropna(axis=1, how='all')
+    .to_csv(local, index=None))
+    print(f'Loaded vocab to {local}')
+    print(f'Google link: {url}')
+
 
 if __name__ == '__main__':
     fire.Fire()

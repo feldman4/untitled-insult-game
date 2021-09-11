@@ -28,6 +28,7 @@ def run():
             if model['socket'] == None:
                 try:
                     model['socket'] = connect_socket()
+                    send_start(model['socket'])
                 except (socket.timeout, ConnectionRefusedError):
                     model['socket'] = None
             handle_incoming(model)
@@ -44,6 +45,8 @@ def run():
 
 
 def handle_incoming(model):
+    """Read any incoming message on the socket and deal with it.
+    """
     if model['socket'] != None:
         try:
             # read from socket
@@ -51,8 +54,8 @@ def handle_incoming(model):
             if not incoming:
                 return model
             message = json.loads(incoming)
-            if message['kind'] == 'level_start':
-                model['log'] = 'received level_start'
+            if message['kind'] == 'model_send':
+                model['log'] = 'received model_send'
                 return level_start(model, message['content'])
         except socket.timeout:
             pass
@@ -79,6 +82,10 @@ def handle_key(model, c):
     if c == '1':
         send_start(m['socket'])
 
+    if c == '<BACKSPACE>':
+        m['buffer'] = m['buffer'][:-1]
+
+    # if complete or uniquely autocompleted, send buffer as message to server
     if c == '<SPACE>':
         if len(m['candidates']) == 1:
             m['buffer'] = m['candidates'][0]
