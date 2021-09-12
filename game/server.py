@@ -8,6 +8,7 @@ from game.constants import *
 from game.comm import send_string, receive_string, get_new_client, create_server
 from game.actors import Player, Enemy
 from game.levels import load_world, load_worlds
+from game.cfg import load_grammar_level2
 
 """
 socket problems
@@ -39,9 +40,6 @@ def init(client, world_name=None):
     first_level = list(world)[0]
 
     player = Player(hp=30, weakness='weight')
-    # should be a column from the vocab sheet
-    player.vocabulary = ['idiot', 'fatso', 'streber', 
-                         'moron']
     
     model = {
         'client': client, 
@@ -164,8 +162,6 @@ def handle_repartee(model, message):
     enemy = m['player'].current_enemy
     first_hp = enemy.hp
     enemy.take_mental_damage(message)
-    # damage = vocab_evaluate(message, enemy.weakness)
-    # enemy.hp -= damage
 
     print(f'Player insults with "{message}": enemy HP {first_hp}=>{enemy.hp}')
     
@@ -176,8 +172,8 @@ def handle_repartee(model, message):
         m['status'] = 'Victory!'
 
     else:
-        # death
-        enemy_insult = enemy.respond()
+        # enemy_insult = enemy.respond()
+        enenmy_insult = random.choice(enemy.vocabulary)
         m['player'].take_mental_damage(enemy_insult)
 
         if m['player'].hp <= 0:
@@ -235,10 +231,9 @@ def send_model(model):
     # determine user's text choices
     level = m['world'][m['level']]
     if m['player'].current_enemy is None:
-        content['choices'] = [x[0] for x in level['links']]
+        content['response'] = ('choices', [x[0] for x in level['links']])
     else:
-        from game import cfg
-        content['grammar'] = cfg.load_grammar_level2()
+        content['response'] = ('grammar', load_grammar_level2())
 
     msg = json.dumps({
         'kind': 'model_send',
