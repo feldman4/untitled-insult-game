@@ -30,6 +30,12 @@ def update_vocab():
     print(f'Google link: {url}')
 
 
+def update_vocab_and_vectors():
+    from game.word_handling import update_insult_vectors
+    update_vocab()
+    update_insult_vectors()
+
+
 def twine():
     import subprocess
     from glob import glob
