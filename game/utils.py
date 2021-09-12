@@ -2,7 +2,21 @@
 
 import pandas as pd
 
+from typing import Union
+
 from game.constants import VOCAB_FILE
+
+
+def calc_similarity_modifier(previous_responses: list, new_response: str) -> Union[int, float]:
+    """Determines how similar new response is to previously heard ones and returns a modifier to be applied to damage.
+
+    If insult is new, returns 1.
+    """
+    if not previous_responses:  # First insult
+        return 1
+
+    else:  # Need to check and calculate
+        pass
 
 
 def read_vocab(input_filter: str = None) -> pd.DataFrame:

@@ -1,10 +1,11 @@
 import random
 
 from typing import Optional
+from collections import Counter
 from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
-from game.utils import read_vocab
+from game.utils import read_vocab, calc_similarity_modifier
 from game.constants import level_mapper, VULNERABLE_MODIFIER
 
 
@@ -13,7 +14,8 @@ class Actor(metaclass=ABCMeta):
     def __init__(self, hp: int, weakness: str = None):
         self.hp = hp
         self.weakness = weakness
-        self._vocab_dict = read_vocab(input_filter="N")  # Only nouns
+        self.encounter_responses = []
+        self._vocab_dict = read_vocab()
 
     @property
     def hp(self) -> int:
@@ -21,21 +23,33 @@ class Actor(metaclass=ABCMeta):
         return self.hp
 
     @hp.setter
-    def hp(self, value: int):
+    def hp(self, value: int) -> None:
         """Manually set the HP."""
         self.hp = value
 
-    def take_mental_damage(self, insult: str):
+    def get_current_responses(self) -> Counter:
+        """Returns of counter of responses used during current combat. If None, then actor not in combat."""
+        return Counter(self.encounter_responses)
+
+    def take_mental_damage(self, insult: str) -> None:
         """Take a certain amount of mental damage. If damage type matches weakness, take double damage."""
         dmg_data = self._vocab_dict.loc[self._vocab_dict["output"] == insult, ["damage", "damage_type"]]
         damage_value = dmg_data.damage.iloc[0]
         damage_type = dmg_data.damage_type.iloc[0]
 
+        similarity_modifier = calc_similarity_modifier(self.encounter_responses, insult)
+
+        # First apply similarity modifier to damage
+        modified_dmg = round(similarity_modifier * damage_value)
+
+        # Apply vulnerability multiplier to damage if applies
         if damage_type == self.weakness:
-            self.hp -= round(VULNERABLE_MODIFIER * damage_value)
+            self.hp -= round(VULNERABLE_MODIFIER * modified_dmg)
 
         else:
-            self.hp -= damage_value
+            self.hp -= modified_dmg
+
+        self.encounter_responses.append(insult)  # Add insult to list of previously heard ones
 
     @staticmethod
     @abstractmethod
@@ -67,7 +81,6 @@ class Player(Actor):
         # Battle attributes
         # self.in_encounter = False
         self.current_enemy: Optional[Enemy] = None
-        self.encounter_responses = None
 
         self._response_history = []  # Used for player stats
 
@@ -77,17 +90,16 @@ class Player(Actor):
 
     def end_encounter(self):
         """End encounter, add responses to player history, and clear battle insult history."""
+        # Add the encounter responses received by enemy (i.e. said by player) to global history
+        self._response_history += self.current_enemy.encounter_responses
         self.current_enemy = None
         # self.in_encounter = False
 
-        if self.encounter_responses:  # Add to full response history for player stats
-            self._response_history += self.encounter_responses
+        self.encounter_responses = []  # Empty encounter response cache
 
-        self.encounter_responses = None
-
-    def gain_xp(self, foe: Enemy):
+    def gain_xp(self):
         """Add XP gained for vanquishing foe."""
-        self.xp += foe.xp_worth
+        self.xp += self.current_enemy.xp_worth
 
     def check_level_up(self):
         """Checks current XP against requirements for leveling up."""
