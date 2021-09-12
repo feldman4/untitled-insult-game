@@ -15,10 +15,13 @@ dev goals
   - event-driven, model-based
 - develop collaboratively
   - hot reload from last model
-  - 
+  - time travel
   - git repo but import from master, then users (no merge conflicts)
 - start with only python (inclusive)
   - first terminal view, then JS view over sockets
+
+dev done
+  - 
 
 basic version
 update

@@ -2,6 +2,7 @@ import socket
 import json
 import sys
 import datetime
+import random
 
 from game.constants import *
 from game.comm import send_string, receive_string, get_new_client, create_server
@@ -15,8 +16,9 @@ socket problems
 
 
 enemies = {
-    'moron': lambda: Enemy(hp=20, xp=10, weakness='intelligence'),
-    'asshole': lambda: Enemy(hp=20, xp=10, weakness='intelligence'),
+    'moron': lambda: Enemy(hp=10, xp=10, weakness='intelligence'),
+    'asshole': lambda: Enemy(hp=10, xp=10, weakness='weight'),
+    'satan': lambda: Enemy(hp=20, xp=100, weakness='personality'),
 }
 
 
@@ -25,17 +27,26 @@ def print(*args, file=sys.stderr, **kwargs):
     builtins.print(*args, file=file, **kwargs)
 
 
-def init(client, world):
-    import random
+def init(client, world_name=None):
+    """Loads the first world if None.
+    """
     random.seed(0)
+
+    worlds = load_worlds(TWINE_ARCHIVE)
+    if world_name == None:
+        world_name = list(worlds.keys())[0]
+    world = worlds[world_name]
+    first_level = list(world)[0]
+
     player = Player(hp=30, weakness='weight')
     # should be a column from the vocab sheet
     player.vocabulary = ['idiot', 'fatso', 'streber', 
                          'moron']
-    first_level = list(world)[0]
+    
     model = {
         'client': client, 
         'player': player,
+        'world_name': world_name,
         'world': world,
         'level': first_level, # start on first level
         'status': '<init>',
@@ -46,15 +57,12 @@ def init(client, world):
 
 # the server model is indexed by the client ID
 def run():
-    worlds = load_worlds(TWINE_ARCHIVE)
-    first_world = list(worlds.values())[0]
-
     server = create_server()
     model = None
     while True:
         new_client = get_new_client(server)
         if new_client != None:
-            model = init(new_client, first_world)
+            model = init(new_client)
         if model == None:
             continue
         
@@ -97,10 +105,10 @@ def handle_special_code(model, message):
     if message in LOAD_SIGNALS:
         i = LOAD_SIGNALS.index(message)
         worlds = load_worlds(TWINE_ARCHIVE)
-        name, world = list(worlds.items())[i]
-        model = init(m['client'], world)
+        world_name = list(worlds)[i]
+        model = init(m['client'], world_name)
         transition(m, m['level'])
-        print(f'{message}: Loaded {name}')
+        print(f'{message}: Loaded {world_name}')
     if message == REWIND:
         frame, timeline = model['history']
         if frame == -1:
@@ -123,9 +131,10 @@ def handle_special_code(model, message):
 
 
 def play_to_frame(model):
+
     m = model
     frame, timeline = m['history']
-    new_model = init(m['client'], m['world'])
+    new_model = init(m['client'], m['world_name'])
     for message in timeline[:frame]:
         new_model = handle_message(new_model, message)
     new_model['history'] = frame, timeline
@@ -154,9 +163,7 @@ def handle_repartee(model, message):
         # victory
         m['player'].xp += enemy.xp
         m['player'].current_enemy = None
-        first_level = list(m['world'])[0]
         m['status'] = 'Victory!'
-        transition(m, first_level)
     else:
         # death
         enemy_insult = enemy.respond()
