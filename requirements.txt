@@ -3,3 +3,4 @@ curtsies
 fire
 pygments
 xmltodict
+natsort
