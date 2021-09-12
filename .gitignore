@@ -144,4 +144,4 @@ DF/notebooks/*ipynb
 *.gv.pdf
 test.html
 logs/
-resources/
+resources/vocab.csv
