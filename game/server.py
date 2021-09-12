@@ -105,24 +105,27 @@ def handle_special_code(model, message):
     if message in LOAD_SIGNALS:
         i = LOAD_SIGNALS.index(message)
         worlds = load_worlds(TWINE_ARCHIVE)
-        world_name = list(worlds)[i]
-        model = init(m['client'], world_name)
-        transition(m, m['level'])
-        print(f'{message}: Loaded {world_name}')
-    if message == REWIND:
+        if i > len(worlds):
+            print(f'No map to load at index {i}')
+        else:  
+            world_name = list(worlds)[i]
+            model = init(m['client'], world_name)
+            transition(m, m['level'])
+            print(f'{message}: Loaded {world_name}')
+    elif message == REWIND:
         frame, timeline = model['history']
         if frame == -1:
             frame = len(timeline)
         frame = max(0, frame - 1)
         model['history'] = (frame, timeline)
         model = play_to_frame(model)
-    if message == FFORWARD:
+    elif message == FFORWARD:
         frame, timeline = model['history']
         if frame != -1:
             frame = min(len(timeline) - 1, frame + 1)
             model['history'] = (frame, timeline)
             model = play_to_frame(model)
-    if message == SYNCHRONIZE:
+    elif message == SYNCHRONIZE:
         frame, timeline = model['history']
         model['history'] = (-1, timeline[:frame])
         model = play_to_frame(model)
@@ -157,6 +160,9 @@ def handle_repartee(model, message):
     enemy = m['player'].current_enemy
     first_hp = enemy.hp
     enemy.take_mental_damage(message)
+    # damage = vocab_evaluate(message, enemy.weakness)
+    # enemy.hp -= damage
+
     print(f'Player insults with "{message}": enemy HP {first_hp}=>{enemy.hp}')
     
     if enemy.hp <= 0:
