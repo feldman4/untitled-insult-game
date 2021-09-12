@@ -3,12 +3,14 @@ import json
 import sys
 import datetime
 import random
+import numpy as np
 
 from game.constants import *
 from game.comm import send_string, receive_string, get_new_client, create_server
 from game.actors import Player, Enemy
 from game.levels import load_world, load_worlds
 from game.cfg import load_grammar_level2
+from game.view import create_battle_template, create_choice_template
 
 """
 socket problems
@@ -17,9 +19,12 @@ socket problems
 
 
 enemies = {
-    'moron': lambda: Enemy(hp=10, xp=10, weakness='intelligence'),
-    'asshole': lambda: Enemy(hp=10, xp=10, weakness='weight'),
-    'satan': lambda: Enemy(hp=20, xp=100, weakness='personality'),
+    'moron': lambda: Enemy(hp=10, xp=10, name='A Moron',
+                          classification='A == "x"', weakness=['Fool']),
+    'asshole': lambda: Enemy(hp=10, xp=10, name='Giant Asshole',
+                    classification='B == "x"',  weakness=['Alcoholic']),
+    'satan': lambda: Enemy(hp=20, xp=100, name='Satan', 
+                    classification='idiot == "x"', weakness=['Disingenuous']),
 }
 
 
@@ -39,7 +44,7 @@ def init(client, world_name=None):
     world = worlds[world_name]
     first_level = list(world)[0]
 
-    player = Player(hp=30, weakness='weight')
+    player = Player(name='Rick', hp=30, classification='level <= 2', weakness=['Reckless'])
     
     model = {
         'client': client, 
@@ -161,20 +166,22 @@ def handle_repartee(model, message):
     m = model
     enemy = m['player'].current_enemy
     first_hp = enemy.hp
-    enemy.take_mental_damage(message)
+    enemy.take_mental_damage2(message)
 
     print(f'Player insults with "{message}": enemy HP {first_hp}=>{enemy.hp}')
-    
+    import time
+    send_model(model)
+    time.sleep(0.75)
     if enemy.hp <= 0:
         # victory
-        m['player'].gain_xp(enemy)
+        m['player'].gain_xp()
         m['player'].end_encounter()
         m['status'] = 'Victory!'
 
     else:
         # enemy_insult = enemy.respond()
-        enenmy_insult = random.choice(enemy.vocabulary)
-        m['player'].take_mental_damage(enemy_insult)
+        enemy_insult = random.choice(enemy.vocabulary)
+        m['player'].take_mental_damage2(enemy_insult)
 
         if m['player'].hp <= 0:
             transition(model, 'hell')
@@ -222,9 +229,10 @@ def send_model(model):
     """Send info to the front end.
     """
     m = model
+    description = m['world'][m['level']]['description']
     content = {
         'header': format_header(model),
-        'description': m['world'][m['level']]['description'],
+        'description': description,
         'history': m['history'],
     }
     
@@ -232,7 +240,10 @@ def send_model(model):
     level = m['world'][m['level']]
     if m['player'].current_enemy is None:
         content['response'] = ('choices', [x[0] for x in level['links']])
+        content['view_template'] = create_choice_template(m['player'], m['level'], description)
     else:
+        enemy = m['player'].current_enemy
+        content['view_template'] = create_battle_template(m['player'], enemy, description)
         content['response'] = ('grammar', load_grammar_level2())
 
     msg = json.dumps({

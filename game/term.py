@@ -2,12 +2,13 @@ import json
 import socket
 import re
 
-from curtsies import FullscreenWindow, Input, FSArray
-from curtsies.fmtfuncs import red, blue, bold, green, on_blue, yellow, cyan, magenta
+from curtsies import FullscreenWindow, Input
 
 from game.comm import connect_socket, send_start, send_string, receive_string
 from game.constants import *
 from game import cfg
+
+from game.view import view
 
 
 def init():
@@ -22,6 +23,7 @@ def init():
         'candidates': [],
         'socket': None,
         'history': (-1, []),
+        'view_template': '{buffer}|{choices}',
     }
     return model
 
@@ -132,48 +134,6 @@ def send_last(model):
             pass
 
 
-def view(model, window):
-    m = model
-    h, w = window.height, window.width
-    a = FSArray(h, w)
-    with open('logs/term', 'a') as fh:
-        print('model', m, file=fh)
-    rows = [
-        red(' '*w),
-        red(' '*w),
-        green(m['description']),
-        cyan(m['buffer']),
-        cyan('OPTIONS: ' + ' '.join(m['candidates'])),
-        magenta('{header}'.format(**model)),
-        # red('LOG: ' + m['log']),
-    ]
-    rows += [red(x) for x in format_history(m['history'])]
-    rows += [blue('socket dead' if m['socket'] == None else 'socket alive'),]
-    for i, row in enumerate(rows):
-        # limit width to match terminal
-        row = row[:w]
-        a[i, :row.width] = [row]
-    window.render_to_terminal(a)
-
-
-def format_history(history):
-    frame, timeline = history
-    rows = [' --- history --- ']
-    if frame == -1:
-        rows += [f'FRAME: {len(timeline)}']
-    else:
-        rows += [f'FRAME: {frame + 1}/{len(timeline)}']
-
-    formatted = [f'[{i}] {msg}' for i, msg in enumerate(timeline)]
-    past = formatted if frame == -1 else formatted[:frame]
-    future = [] if frame == -1 else formatted[frame:]
-
-    rows += ['PAST: ' +  ' '.join(past[-3:][::-1])]
-    rows += ['FUTURE: ' +  ' '.join(future[:3])]
-
-    return rows
-
-
 def update_buffer_grammar(grammar, buffer, character):
     """Almost identical to old Elm Typewriter. Except <DELETE>
     backspace to delete entire word.
@@ -188,10 +148,6 @@ def update_buffer_grammar(grammar, buffer, character):
     else:
         buffer_minus_word = buffer
     ready_to_send = cfg.is_complete(grammar, completed_words)
-
-    print(buffer)
-    print(buffer_minus_word)
-    print(word_in_progress)
 
     send = None
     # autocomplete if there's only one word, and space is hit
@@ -234,7 +190,7 @@ def update_candidates(model):
         m['candidates'] = [x for x in choices if x.startswith(word_in_progress)]
     elif m['response'][0] == 'choices':
         choices = m['response'][1]
-        m['candidates'] = [x for x in choices if x.startswith(m['buffer'])]
+        m['candidates'] = [x for x in choices if x.lower().startswith(m['buffer'])]
     return m
 
 
