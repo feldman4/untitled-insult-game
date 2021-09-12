@@ -12,13 +12,15 @@ from game.cfg import get_all_insults
 
 class Actor(metaclass=ABCMeta):
 
-    def __init__(self, hp: int, classification: str, weakness: list = None, ):
+    def __init__(self, hp: int, classification: str, weakness: list = None, name: str = 'dennis'):
         self.hp = hp
+        self.max_hp = hp
         self.weakness = weakness
         self.encounter_responses = []
         self._vocab_dict = read_vocab()
         self.grammar = get_grammar(classification)
         self.vocabulary = get_all_insults(self.grammar)
+        self.name = name
 
     #@property
     #def hp(self) -> int:
@@ -57,14 +59,17 @@ class Actor(metaclass=ABCMeta):
     def take_mental_damage2(self, insult: str) -> None:
         from game.word_handling import multi_word_dmg
         from game.utils import get_dmg_map
-        insult = insult.split()
-        dmg_mod = multi_word_dmg(insult, self.weakness)
+        dmg_mod = multi_word_dmg(insult.split(), self.weakness)
         dmg_map = get_dmg_map()
-        dmg = max(dmg_map.get(x, 0) for x in insult)
-        print(dmg_mod, dmg)
+        dmg = max(dmg_map.get(x, 0) for x in insult.split())
+        
+        if insult in self.encounter_responses:
+            dmg_mod = -0.4
 
-        # dmg_mod is 0 to 1 (fraction of extra damage)
-        self.hp -= dmg * (1 + 2*dmg_mod)
+        # print(dmg_mod, dmg)
+
+        # dmg_mod is -1 to 1 (fraction of extra damage)
+        self.hp -= int(dmg * (1 + 2*dmg_mod))
         self.encounter_responses.append(insult)
 
     @staticmethod
@@ -75,8 +80,8 @@ class Actor(metaclass=ABCMeta):
 
 class Enemy(Actor):
 
-    def __init__(self, hp: int, xp: int, classification: str, weakness: list):
-        super().__init__(hp=hp, classification=classification, weakness=weakness)
+    def __init__(self, name: str, hp: int, xp: int, classification: str, weakness: list):
+        super().__init__(hp=hp, classification=classification, weakness=weakness, name=name)
         self.xp_worth = xp
 
     def respond(self) -> str:
@@ -88,8 +93,8 @@ class Enemy(Actor):
 
 class Player(Actor):
 
-    def __init__(self, hp: int, classification: str, weakness: list, level: int = 1):
-        super().__init__(hp=hp, classification=classification, weakness=weakness)
+    def __init__(self,  name: str, hp: int, classification: str, weakness: list, level: int = 1):
+        super().__init__(hp=hp, classification=classification, weakness=weakness, name=name)
         self.level = level
         self.xp = level_mapper[self.level]
         #self.vocabulary = self._vocab_dict.loc[(self._vocab_dict['level'] <= self.level)].output.to_list()
