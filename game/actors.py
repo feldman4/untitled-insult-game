@@ -1,5 +1,6 @@
 import random
 
+from typing import Optional
 from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
@@ -46,7 +47,7 @@ class Enemy(Actor):
 
     def __init__(self, hp: int, xp: int, weakness: str):
         super().__init__(hp=hp, weakness=weakness)
-        self.xp = xp
+        self.xp_worth = xp
 
     def respond(self) -> str:
         """Randomly selects from allowed insults and returns insult, damage value, and damage type."""
@@ -65,7 +66,7 @@ class Player(Actor):
 
         # Battle attributes
         # self.in_encounter = False
-        self.current_enemy = None
+        self.current_enemy: Optional[Enemy] = None
         self.encounter_responses = None
 
         self._response_history = []  # Used for player stats
@@ -84,6 +85,10 @@ class Player(Actor):
 
         self.encounter_responses = None
 
+    def gain_xp(self, foe: Enemy):
+        """Add XP gained for vanquishing foe."""
+        self.xp += foe.xp_worth
+
     def check_level_up(self):
         """Checks current XP against requirements for leveling up."""
         if self.xp >= level_mapper[self.level + 1]:
@@ -92,7 +97,7 @@ class Player(Actor):
             self.vocabulary += self._vocab_dict.loc[self._vocab_dict['level'] == self.level].output.to_list()
 
     def repartee(self, target: Enemy):
-        """Main verbal battle method."""
+        """Main verbal battle method. Mostly used for testing."""
         while self.hp > 0 and target.hp > 0:
             # Show health
             print(colorize("green", f"Your mental health: {self.hp}"))
@@ -112,7 +117,7 @@ class Player(Actor):
 
         else:
             print("You have schooled your foe.")
-            self.xp += target.xp  # Gain XP based on foe slain
+            self.xp += target.xp_worth  # Gain XP based on foe slain
             self.check_level_up()
 
     def respond(self) -> str:
@@ -133,4 +138,4 @@ if __name__ == "__main__":
     player = Player(hp=100, weakness="intelligence")
     enemy = Enemy(hp=10, xp=50, weakness="personality")
 
-    player.trigger_encounter(enemy)
+    player.repartee(enemy)
