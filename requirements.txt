@@ -4,3 +4,4 @@ fire
 pygments
 xmltodict
 natsort
+gensim
