@@ -143,3 +143,5 @@ DF/notebooks/*ipynb
 *.gv
 *.gv.pdf
 test.html
+logs/
+resources/

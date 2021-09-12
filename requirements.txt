@@ -2,3 +2,4 @@ pandas
 curtsies
 fire
 pygments
+twine-graph
