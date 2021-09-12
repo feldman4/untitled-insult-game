@@ -18,6 +18,7 @@ socket problems
 - other stuff
 """
 
+REPARTEE_DELAY = 0.75
 
 def print(*args, file=sys.stderr, **kwargs):
     import builtins
@@ -132,13 +133,16 @@ def handle_special_code(model, message):
 
 
 def play_to_frame(model):
-
+    global REPARTEE_DELAY
+    old_delay = REPARTEE_DELAY
+    REPARTEE_DELAY = 0
     m = model
     frame, timeline = m['history']
     new_model = init(m['client'], m['world_name'])
     for message in timeline[:frame]:
         new_model = handle_message(new_model, message)
     new_model['history'] = frame, timeline
+    REPARTEE_DELAY = old_delay
     return new_model
 
 
@@ -162,7 +166,7 @@ def handle_repartee(model, message):
     print(f'Player insults with "{message}": enemy HP {first_hp}=>{enemy.hp}')
     import time
     send_model(model)
-    time.sleep(0.75)
+    time.sleep(REPARTEE_DELAY)
     if enemy.hp <= 0:
         # victory
         m['player'].gain_xp()
