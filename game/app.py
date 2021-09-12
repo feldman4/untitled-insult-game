@@ -30,7 +30,7 @@ def update_vocab():
 
     (pd.read_csv(download_url)
     .dropna(axis=1, how='all')
-    .to_csv(local, index=None))
+    .to_csv(VOCAB_FILE, index=None))
     print(f'Loaded vocab to {local}')
     print(f'From google sheet: {browser_url}')
     url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&sheet={sheet_name}'
