@@ -239,7 +239,9 @@ def send_model(model):
     else:
         enemy = m['player'].current_enemy
         content['view_template'] = create_battle_template(m['player'], enemy, description)
-        content['response'] = ('grammar', load_grammar_level2())
+        grammar = m['player'].grammar
+        # grammar = load_grammar_level2()
+        content['response'] = ('grammar', grammar)
 
     msg = json.dumps({
         'kind': 'model_send',
