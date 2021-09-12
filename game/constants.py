@@ -1,9 +1,31 @@
 import pandas as pd
 
+TWINE_ARCHIVE = 'DF/worlds/*.html'
+
 PORT = 1241
 TIMEOUT = 0.01
 
-START = 'fire it up'
+REWIND = 'REWIND'
+FFORWARD = 'FFORWARD'
+SYNCHRONIZE = 'SYNCHRONIZE'
+
+LOAD_1 = 'LOAD 1'
+LOAD_2 = 'LOAD 2'
+LOAD_3 = 'LOAD 3'
+LOAD_4 = 'LOAD 4'
+
+LOAD_SIGNALS = LOAD_1, LOAD_2, LOAD_3, LOAD_4
+
+# shortcuts from front-end
+SYSTEM_CODES = {
+    '1': LOAD_1,
+    '2': LOAD_2,
+    '3': LOAD_3,
+    '4': LOAD_4,
+    '7': REWIND,
+    '8': FFORWARD,
+    '9': SYNCHRONIZE,
+}
 
 INTELLIGENCE = "intelligence"
 WEIGHT = "weight"

@@ -2,19 +2,23 @@ import json
 import socket
 
 from curtsies import FullscreenWindow, Input, FSArray
-from curtsies.fmtfuncs import red, blue, bold, green, on_blue, yellow
+from curtsies.fmtfuncs import red, blue, bold, green, on_blue, yellow, cyan, magenta
 
-from game.comm import connect_socket, send_start, send_string
+from game.comm import connect_socket, send_start, send_string, receive_string
+from game.constants import *
+
 
 def init():
     model = {
-        'header': 'Type your shit:',
+        'description': 'DESCRIPTION',
+        'header': 'HEADER',
         'buffer': '',
         'last': '',
         'log': '',
         'candidates': [],
-        'choices': ['apple', 'appman', 'banana'],
+        'choices': ['CHOICE_0', 'CHOICE_1'],
         'socket': None,
+        'history': (-1, []),
     }
     return model
 
@@ -24,17 +28,18 @@ def run():
     history = []
 
     with FullscreenWindow() as window, Input() as input_generator:
+
         while True:
             if model['socket'] == None:
                 try:
                     model['socket'] = connect_socket()
-                    send_start(model['socket'])
+                    send_string(model['socket'], LOAD_1)
                 except (socket.timeout, ConnectionRefusedError):
                     model['socket'] = None
             handle_incoming(model)
             
             old_model = model.copy()
-            c = input_generator.send(1)
+            c = input_generator.send(TIMEOUT)
             model = handle_key(model, c)
             model = update_candidates(model)
 
@@ -47,15 +52,16 @@ def run():
 def handle_incoming(model):
     """Read any incoming message on the socket and deal with it.
     """
-    if model['socket'] != None:
+    m = model
+    if m['socket'] != None:
         try:
             # read from socket
-            incoming = model['socket'].recv(1000000).decode()
-            if not incoming:
+            incoming = receive_string(m['socket'])
+            if incoming == None or not incoming:
                 return model
             message = json.loads(incoming)
             if message['kind'] == 'model_send':
-                model['log'] = 'received model_send'
+                m['log'] = 'received model_send'
                 return level_start(model, message['content'])
         except socket.timeout:
             pass
@@ -70,23 +76,16 @@ def level_start(model, content):
 
 def handle_key(model, c):
     m = model
+
     if c == None:
-        return model
-
-    if any(x.startswith(m['buffer'] + c) for x in m['choices']):
-        m['buffer'] += c
-
-    m = update_candidates(m)
-
-    # special start string
-    if c == '1':
-        send_start(m['socket'])
-
-    if c == '<BACKSPACE>':
+        pass
+    elif c in SYSTEM_CODES:
+        send_string(m['socket'], SYSTEM_CODES[c])
+    elif c == '<BACKSPACE>':
         m['buffer'] = m['buffer'][:-1]
-
     # if complete or uniquely autocompleted, send buffer as message to server
-    if c == '<SPACE>':
+    elif c == '<SPACE>':
+        m = update_candidates(m)
         if len(m['candidates']) == 1:
             m['buffer'] = m['candidates'][0]
         if m['buffer'] in m['choices']:
@@ -95,6 +94,9 @@ def handle_key(model, c):
             m['buffer'] = ''
             m['candidates'] = m['choices']
             send_string(m['socket'], word)
+    elif any(x.lower().startswith(m['buffer'] + c.lower()) for x in m['choices']):
+        m['buffer'] = (m['buffer'] + c).lower()
+        m = update_candidates(m)
 
     return m
 
@@ -110,27 +112,48 @@ def send_last(model):
 
 def view(model, window):
     m = model
-    a = FSArray(window.height, window.width)
-    first_row = red('{header}'.format(**model))
-    second_row = blue(m['buffer'])
-    third_row = green(' '.join(m['candidates']))
-    fourth_row = red('LOG: ' + m['log'])
-    if m['socket'] == None:
-        fifth_row = blue('socket dead')
-    else:
-        fifth_row = blue('socket alive')
-
-    a[0, :first_row.width] = [first_row]
-    a[1, :second_row.width] = [second_row]
-    a[2, :third_row.width] = [third_row]
-    a[3, :fourth_row.width] = [fourth_row]
-    a[4, :fifth_row.width] = [fifth_row]
+    h, w = window.height, window.width
+    a = FSArray(h, w)
+    with open('logs/view', 'w') as fh:
+        print('model', m, file=fh)
+    rows = [
+        red(' '*w),
+        red(' '*w),
+        green(m['description']),
+        cyan(m['buffer']),
+        cyan('OPTIONS: ' + ' '.join(m['candidates'])),
+        magenta('{header}'.format(**model)),
+        # red('LOG: ' + m['log']),
+    ]
+    rows += [red(x) for x in format_history(m['history'])]
+    rows += [blue('socket dead' if m['socket'] == None else 'socket alive'),]
+    for i, row in enumerate(rows):
+        # limit width to match terminal
+        row = row[:w]
+        a[i, :row.width] = [row]
     window.render_to_terminal(a)
 
 
+def format_history(history):
+    frame, timeline = history
+    rows = [' --- history --- ']
+    if frame == -1:
+        rows += [f'FRAME: {len(timeline)}']
+    else:
+        rows += [f'FRAME: {frame + 1}/{len(timeline)}']
+
+    formatted = [f'[{i}] {msg}' for i, msg in enumerate(timeline)]
+    past = formatted if frame == -1 else formatted[:frame]
+    future = [] if frame == -1 else formatted[frame:]
+
+    rows += ['PAST: ' +  ' '.join(past[-3:][::-1])]
+    rows += ['FUTURE: ' +  ' '.join(future[:3])]
+
+    return rows
+
 def update_candidates(model):
     model['candidates'] = [x for x in model['choices'] 
-                           if x.startswith(model['buffer'])]
+                           if x.lower().startswith(model['buffer'])]
     return model
 
 

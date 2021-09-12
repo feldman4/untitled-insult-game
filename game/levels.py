@@ -1,5 +1,8 @@
 import json
 import re
+import xmltodict
+from natsort import natsorted
+from glob import glob
 
 
 def load_world(name='test'):
@@ -14,14 +17,14 @@ def get_enemy(passage):
     else:
         return matches[0]
     
-def get_header(passage):
+def get_description(passage):
     return passage['text'].split('\n')[0]
 
 def parse_world(world):
     d = {}
     for passage in world['passages']:
         level = {
-            'header': get_header(passage),
+            'description': get_description(passage),
         }
 
         links = passage['links']
@@ -30,27 +33,64 @@ def parse_world(world):
             level['enemy'] = enemy
         
         if len(links) > 0:
-            level['choice'] = [x['text'] for x in links]
+            level['choices'] = [(x['text'], x['destination']['name']) for x in links]
         d[passage['name']] = level
     return d
-    
 
 
-example_world = dict(
-vestibule = {
-    'header': 'Choose your destiny',
-    'choices': ['A: fight moron', 'B: fight asshole'],
-},
-level_1 = {
-    'header': 'THE MORON: drool runs equally out both sides of his mouth', 
-    'enemy': 'moron',
-},
-level_2 = {
-    'header': 'THE ASSHOLE: his Boxter is parked on your front lawn', 
-    'enemy': 'asshole',
-},
-hell = {
-    'header': 'You died. This is mute hell.',
-    'choices': [],
-},
-)
+def extract_links(txt):
+    capture = '\[\[(.*)->(.*)\]\]'
+    match = '\[\[.*->.*\]\]'
+    matches = re.findall(capture, txt)
+    matches
+    for x in re.findall(match, txt):
+        txt = txt.replace(x, '')
+    txt = txt.strip()
+    return txt, matches
+
+
+def load_passage(passage_data):
+    cleaned, links = extract_links(passage_data['#text'])
+    level = {
+        'description': cleaned,
+        'links': links, 
+        'tags': parse_tags(passage_data['@tags']),
+    }
+    return level
+
+def parse_tags(txt):
+    pat = '(\w+):(\w+)'
+    return dict(re.findall(pat, txt))
+
+def load_world(story):
+    return {x['@name']: load_passage(x) 
+            for x in story['tw-passagedata']}
+
+
+def load_archive(filename, verbose=False):
+    """Load a Twine archive from https://twinery.org/2
+    """
+    # make it xml
+    with open(filename, 'r') as fh:
+        txt = fh.read()
+    txt = txt.replace('hidden>', '>')
+    txt = f'<archive>{txt}</archive>'
+    archive = xmltodict.parse(txt)
+    archive = json.loads(json.dumps(archive))
+    archive = archive['archive']['tw-storydata']
+    if not isinstance(archive, list):
+        archive = [archive]
+    return archive
+
+
+def load_worlds(search, verbose=True):
+    """Parse Twine archives into worlds. Archive files are sorted, and later 
+    archives overwrite earlier ones.
+    """
+    files = natsorted(glob(search))
+    worlds = {}
+    for f in files:
+        archive = load_archive(f, verbose=verbose)
+        for story in archive:
+            worlds[story['@name']] = load_world(story)
+    return {k: worlds[k] for k in sorted(worlds)}

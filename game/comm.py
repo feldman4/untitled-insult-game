@@ -15,7 +15,7 @@ def send_string(socket, s):
         return
     try:
         socket.send(s.encode())
-    except socket.timeout:
+    except socket_lib.timeout:
         pass
 
 
@@ -27,7 +27,7 @@ def receive_string(socket):
     try:
         incoming = socket.recv(100000).decode()
         return incoming
-    except socket_lib.timeout:
+    except (socket_lib.timeout, ConnectionResetError):
         return None
 
 
@@ -44,6 +44,7 @@ def get_new_client(server):
 def create_server():
     server = socket_lib.socket()
     server.setsockopt(socket_lib.SOL_SOCKET, socket_lib.SO_REUSEADDR, 1)
+    server.setsockopt(socket_lib.SOL_SOCKET, socket_lib.SO_REUSEPORT, 1)
     server.bind(('localhost',PORT))   # takes a tuple
     server.settimeout(TIMEOUT)
     server.listen(5) # up to 5 connections...

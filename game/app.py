@@ -3,6 +3,8 @@ import sys
 
 
 def term():
+    """curtsies front end
+    """
     from game import term
     term.run()
 
@@ -13,6 +15,8 @@ def server():
 
 
 def update_vocab():
+    """Download vocabulary from google sheet.
+    """
     import pandas as pd
     local = 'resources/vocab.csv'
 
@@ -25,6 +29,15 @@ def update_vocab():
     print(f'Loaded vocab to {local}')
     print(f'Google link: {url}')
 
+
+def twine():
+    import subprocess
+    from glob import glob
+
+    files = glob('DF/twine/*html')
+    for f in files:
+        print(f'Converting {f}')
+        subprocess.check_output(['twine_graph', f])
 
 if __name__ == '__main__':
     fire.Fire()
