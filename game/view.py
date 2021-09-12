@@ -1,7 +1,7 @@
 import numpy as np
 from curtsies.fmtfuncs import red, blue, bold, green, on_blue, yellow, cyan, magenta
 from curtsies import FSArray
-
+import textwrap
 
 def view(model, window):
     m = model
@@ -10,10 +10,14 @@ def view(model, window):
     with open('logs/term', 'w') as fh:
         print('model', m['view_template'], file=fh)
 
-    blank = red(' '*w)
-    horizontal_line = red('-' * w)
+    width = max(len(x) for x in m['view_template'].split('\n'))
+    blank = red(' '*width)
+    horizontal_line = red('-' * width)
 
-    front = m['view_template'].format(buffer=m['buffer'], choices=' '.join(m['candidates']))
+    candidates = textwrap.wrap(' '.join(m['candidates']), width-8)
+    candidates = '\n'.join(candidates)
+
+    front = m['view_template'].format(buffer=m['buffer'], choices=candidates)
     rows = [green(x) for x in front.split('\n')]
     rows += [blank]
     rows += [blank]

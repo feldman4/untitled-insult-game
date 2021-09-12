@@ -11,21 +11,12 @@ from game.actors import Player, Enemy
 from game.levels import load_world, load_worlds
 from game.cfg import load_grammar_level2
 from game.view import create_battle_template, create_choice_template
+from game.enemies import enemies
 
 """
 socket problems
 - other stuff
 """
-
-
-enemies = {
-    'moron': lambda: Enemy(hp=10, xp=10, name='A Moron',
-                          classification='A == "x"', weakness=['Fool']),
-    'asshole': lambda: Enemy(hp=10, xp=10, name='Giant Asshole',
-                    classification='B == "x"',  weakness=['Alcoholic']),
-    'satan': lambda: Enemy(hp=20, xp=100, name='Satan', 
-                    classification='idiot == "x"', weakness=['Disingenuous']),
-}
 
 
 def print(*args, file=sys.stderr, **kwargs):
@@ -112,7 +103,7 @@ def handle_special_code(model, message):
     if message in LOAD_SIGNALS:
         i = LOAD_SIGNALS.index(message)
         worlds = load_worlds(TWINE_ARCHIVE)
-        if i > len(worlds):
+        if i >= len(worlds):
             print(f'No map to load at index {i}')
         else:  
             world_name = list(worlds)[i]
