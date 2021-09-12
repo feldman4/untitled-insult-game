@@ -1,7 +1,6 @@
-import gensim
 import math
 import pandas as pd
-import numpy as np
+
 
 
 def load_insults_vectors() -> dict :
@@ -24,13 +23,11 @@ def init_word_scores():
 
 def calc_similarity(word1: str, word2: str) -> float:
     """Calculate the similarity between two insults/words"""
-    #dic = load_insults_vectors()
     return round(abs(sum(dic[word1] / (sum(dic[word1] ** 2) ** 0.5) * dic[word2] / (sum(dic[word2] ** 2) ** 0.5))), 4)
 
 
 def create_ranking(word: str) -> list:
     """Calculate rank of insult compared to all other insults that you can use"""
-    #dic = load_insults_vectors()
     l = []
     for x in dic.keys():
         l.append((x, calc_similarity(word, x)))
@@ -58,7 +55,6 @@ def multi_word_dmg(attack: list, defense: list) -> float:
         for word2 in defense:
             l.append(calc_total_dmg_mod(word1, word2))
     return round(sum(l), 3)
-    return round(sum(l) / len(l), 3)
 
 
 def update_insult_vectors():

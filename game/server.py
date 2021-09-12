@@ -36,7 +36,7 @@ def init(client, world_name=None):
     world = worlds[world_name]
     first_level = list(world)[0]
 
-    player = Player(name='Rick', hp=30, classification='level <= 2', weakness=['Reckless'])
+    player = Player(name='Ricky Rock', hp=50, classification='level == 1', weakness=['Wino', 'Unwashed', 'Bearded'])
     
     model = {
         'client': client, 

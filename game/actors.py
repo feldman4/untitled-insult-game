@@ -121,13 +121,18 @@ class Player(Actor):
     def gain_xp(self):
         """Add XP gained for vanquishing foe."""
         self.xp += self.current_enemy.xp_worth
+        self.check_level_up()
 
     def check_level_up(self):
         """Checks current XP against requirements for leveling up."""
         if self.xp >= level_mapper[self.level + 1]:
             self.level += 1
-            print(f"LEVEL UP: {self.level}")
-            self.vocabulary += self._vocab_dict.loc[self._vocab_dict['level'] == self.level].output.to_list()
+
+            # In case of level up, update vocabulary and grammar
+            self.grammar = get_grammar(f'level <= {float(self.level)}')
+            self.vocabulary = get_all_insults(self.grammar)
+            #print(f"LEVEL UP: {self.level}")
+            #self.vocabulary += self._vocab_dict.loc[self._vocab_dict['level'] == self.level].output.to_list()
 
     def repartee(self, target: Enemy):
         """Main verbal battle method. Mostly used for testing."""
@@ -152,6 +157,20 @@ class Player(Actor):
             print("You have schooled your foe.")
             self.xp += target.xp_worth  # Gain XP based on foe slain
             self.check_level_up()
+
+    # For testing half dmg for player
+    def take_mental_damage2(self, insult: str) -> None:
+        from game.word_handling import multi_word_dmg
+        from game.utils import get_dmg_map
+        dmg_mod = multi_word_dmg(insult.split(), self.weakness)
+        dmg_map = get_dmg_map()
+        dmg = max(dmg_map.get(x, 0) for x in insult.split())
+
+        if insult in self.encounter_responses:
+            dmg_mod = -0.4
+
+        self.hp -= int(dmg * (1 + 2 * dmg_mod))//2
+        self.encounter_responses.append(insult)
 
     def respond(self) -> str:
         """Player enters verbal response from predefined list. Returns accepted response and insult type."""

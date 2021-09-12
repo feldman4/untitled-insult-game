@@ -150,6 +150,10 @@ def update_buffer_grammar(grammar, buffer, character):
     ready_to_send = cfg.is_complete(grammar, completed_words)
 
     send = None
+
+    # Set default value? Had issues here sometimes
+    new_buffer = ''
+
     # autocomplete if there's only one word, and space is hit
     if character == '<SPACE>':
         if ready_to_send and word_in_progress == '':
