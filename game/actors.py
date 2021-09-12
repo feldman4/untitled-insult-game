@@ -1,16 +1,10 @@
 import random
 
-import pandas as pd
-
-from typing import Tuple
 from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
-from game.constants import level_mapper, PERSONALITY, INTELLIGENCE, VOCAB_FILE
-
-
-vocab_df = pd.read_csv(VOCAB_FILE)
-vocab_dict = vocab_df.loc[vocab_df["rule"] == "vocabulary"]
+from game.utils import read_vocab
+from game.constants import level_mapper, PERSONALITY, INTELLIGENCE
 
 
 class Actor(metaclass=ABCMeta):
@@ -18,10 +12,11 @@ class Actor(metaclass=ABCMeta):
     def __init__(self, hp: int, weakness: str = None):
         self.hp = hp
         self.weakness = weakness
+        self._vocab_dict = read_vocab(input_filter="N")  # Only nouns
 
     def take_mental_damage(self, insult: str):
         """Take a certain amount of mental damage. If damage type matches weakness, take double damage."""
-        dmg_data = vocab_dict.loc[vocab_dict["output"] == insult, ["damage", "damage_type"]]
+        dmg_data = self._vocab_dict.loc[self._vocab_dict["output"] == insult, ["damage", "damage_type"]]
         damage_value = dmg_data.damage.iloc[0]
         damage_type = dmg_data.damage_type.iloc[0]
 
@@ -43,10 +38,9 @@ class Enemy(Actor):
         super().__init__(hp=hp, weakness=weakness)
         self.xp = xp
 
-    @staticmethod
-    def respond() -> str:
+    def respond(self) -> str:
         """Randomly selects from allowed insults and returns insult, damage value, and damage type."""
-        options = list(vocab_dict.output)
+        options = list(self._vocab_dict.output)
         response_choice = random.choice(options)
         return response_choice
 
@@ -57,9 +51,9 @@ class Player(Actor):
         super().__init__(hp=hp, weakness=weakness)
         self.level = level
         self.xp = level_mapper[self.level]
-        self.vocabulary = vocab_dict.loc[
-            (vocab_dict['level'] <= self.level) & (vocab_dict['input'] == "N")
-        ].output.to_list()
+        self.vocabulary = self._vocab_dict.loc[
+            (self._vocab_dict['level'] <= self.level) & (self._vocab_dict['input'] == "N")
+            ].output.to_list()
 
         self.current_enemy = None
 
@@ -72,7 +66,7 @@ class Player(Actor):
         if self.xp >= level_mapper[self.level + 1]:
             self.level += 1
             print(f"LEVEL UP: {self.level}")
-            self.vocabulary += vocab_dict.loc[vocab_dict['level'] == self.level].output.to_list()
+            self.vocabulary += self._vocab_dict.loc[self._vocab_dict['level'] == self.level].output.to_list()
 
     def repartee(self, target: Enemy):
         """Main verbal battle method."""
