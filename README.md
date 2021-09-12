@@ -20,6 +20,14 @@ dev goals
 - start with only python (inclusive)
   - first terminal view, then JS view over sockets
 
+meta-navigation
+- use front end hotkeys `7`, `8`, `9`
+- `7`. `REWIND`: step backwards in time
+- `8`. `FFORWARD`: step forwards in time
+- `9`. `SYNCHRONIZE`: resume normal gameplay at this time
+- time travel reloads worlds from Twine archive, then replays messages
+
+
 dev done
   - 
 
