@@ -1,7 +1,4 @@
 import fire
-import sys
-
-from game.constants import VOCAB_FILE
 
 
 def term():

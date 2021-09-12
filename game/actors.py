@@ -1,16 +1,12 @@
 import random
 
-import pandas as pd
-
-from typing import Tuple
+from typing import Optional
+from collections import Counter
 from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
-from game.constants import level_mapper, PERSONALITY, INTELLIGENCE, VOCAB_FILE
-
-
-vocab_df = pd.read_csv(VOCAB_FILE)
-vocab_dict = vocab_df.loc[vocab_df["rule"] == "vocabulary"]
+from game.utils import read_vocab, calc_similarity_modifier
+from game.constants import level_mapper, VULNERABLE_MODIFIER
 
 
 class Actor(metaclass=ABCMeta):
@@ -18,18 +14,42 @@ class Actor(metaclass=ABCMeta):
     def __init__(self, hp: int, weakness: str = None):
         self.hp = hp
         self.weakness = weakness
+        self.encounter_responses = []
+        self._vocab_dict = read_vocab()
 
-    def take_mental_damage(self, insult: str):
+    @property
+    def hp(self) -> int:
+        """Get the HP value."""
+        return self.hp
+
+    @hp.setter
+    def hp(self, value: int) -> None:
+        """Manually set the HP."""
+        self.hp = value
+
+    def get_current_responses(self) -> Counter:
+        """Returns of counter of responses used during current combat. If None, then actor not in combat."""
+        return Counter(self.encounter_responses)
+
+    def take_mental_damage(self, insult: str) -> None:
         """Take a certain amount of mental damage. If damage type matches weakness, take double damage."""
-        dmg_data = vocab_dict.loc[vocab_dict["output"] == insult, ["damage", "damage_type"]]
+        dmg_data = self._vocab_dict.loc[self._vocab_dict["output"] == insult, ["damage", "damage_type"]]
         damage_value = dmg_data.damage.iloc[0]
         damage_type = dmg_data.damage_type.iloc[0]
 
+        similarity_modifier = calc_similarity_modifier(self.encounter_responses, insult)
+
+        # First apply similarity modifier to damage
+        modified_dmg = round(similarity_modifier * damage_value)
+
+        # Apply vulnerability multiplier to damage if applies
         if damage_type == self.weakness:
-            self.hp -= 1.5 * damage_value
+            self.hp -= round(VULNERABLE_MODIFIER * modified_dmg)
 
         else:
-            self.hp -= damage_value
+            self.hp -= modified_dmg
+
+        self.encounter_responses.append(insult)  # Add insult to list of previously heard ones
 
     @staticmethod
     @abstractmethod
@@ -41,12 +61,11 @@ class Enemy(Actor):
 
     def __init__(self, hp: int, xp: int, weakness: str):
         super().__init__(hp=hp, weakness=weakness)
-        self.xp = xp
+        self.xp_worth = xp
 
-    @staticmethod
-    def respond() -> str:
+    def respond(self) -> str:
         """Randomly selects from allowed insults and returns insult, damage value, and damage type."""
-        options = list(vocab_dict.output)
+        options = list(self._vocab_dict.output)
         response_choice = random.choice(options)
         return response_choice
 
@@ -57,25 +76,40 @@ class Player(Actor):
         super().__init__(hp=hp, weakness=weakness)
         self.level = level
         self.xp = level_mapper[self.level]
-        self.vocabulary = vocab_dict.loc[
-            (vocab_dict['level'] <= self.level) & (vocab_dict['input'] == "N")
-        ].output.to_list()
+        self.vocabulary = self._vocab_dict.loc[(self._vocab_dict['level'] <= self.level)].output.to_list()
 
+        # Battle attributes
+        # self.in_encounter = False
+        self.current_enemy: Optional[Enemy] = None
+
+        self._response_history = []  # Used for player stats
+
+    # def trigger_encounter(self, target: Enemy):
+    #     """Set encounter state to True."""
+    #     self.in_encounter = True
+
+    def end_encounter(self):
+        """End encounter, add responses to player history, and clear battle insult history."""
+        # Add the encounter responses received by enemy (i.e. said by player) to global history
+        self._response_history += self.current_enemy.encounter_responses
         self.current_enemy = None
+        # self.in_encounter = False
 
-    def trigger_encounter(self, target: Enemy):
-        """Set encounter state to True."""
-        self.repartee(target=target)
+        self.encounter_responses = []  # Empty encounter response cache
+
+    def gain_xp(self):
+        """Add XP gained for vanquishing foe."""
+        self.xp += self.current_enemy.xp_worth
 
     def check_level_up(self):
         """Checks current XP against requirements for leveling up."""
         if self.xp >= level_mapper[self.level + 1]:
             self.level += 1
             print(f"LEVEL UP: {self.level}")
-            self.vocabulary += vocab_dict.loc[vocab_dict['level'] == self.level].output.to_list()
+            self.vocabulary += self._vocab_dict.loc[self._vocab_dict['level'] == self.level].output.to_list()
 
     def repartee(self, target: Enemy):
-        """Main verbal battle method."""
+        """Main verbal battle method. Mostly used for testing."""
         while self.hp > 0 and target.hp > 0:
             # Show health
             print(colorize("green", f"Your mental health: {self.hp}"))
@@ -95,7 +129,7 @@ class Player(Actor):
 
         else:
             print("You have schooled your foe.")
-            self.xp += target.xp  # Gain XP based on foe slain
+            self.xp += target.xp_worth  # Gain XP based on foe slain
             self.check_level_up()
 
     def respond(self) -> str:
@@ -105,9 +139,6 @@ class Player(Actor):
         print(" ".join(allowed_words))
         player_input = input("Please enter your insult: ")
 
-        # For testing
-        # player_input = "fatso"
-
         while player_input not in allowed_words:
             print(f"Word not allowed! Please choose from the following: {' '.join(allowed_words)}")
             player_input = input("New insult: ")
@@ -116,7 +147,7 @@ class Player(Actor):
 
 
 if __name__ == "__main__":
-    player = Player(hp=100, weakness=INTELLIGENCE)
-    enemy = Enemy(hp=10, xp=50, weakness=PERSONALITY)
+    player = Player(hp=100, weakness="intelligence")
+    enemy = Enemy(hp=10, xp=50, weakness="personality")
 
-    player.trigger_encounter(enemy)
+    player.repartee(enemy)

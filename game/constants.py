@@ -13,9 +13,8 @@ REWIND = 'REWIND'
 FFORWARD = 'FFORWARD'
 SYNCHRONIZE = 'SYNCHRONIZE'
 
-INTELLIGENCE = "intelligence"
-WEIGHT = "weight"
-PERSONALITY = "personality"
+# Modifiers
+VULNERABLE_MODIFIER = 1.5
 
 # Server messages
 LOAD_1 = 'LOAD 1'
@@ -37,7 +36,7 @@ SYSTEM_CODES = {
 }
 
 # Mappers
-level_mapper = {
+level_mapper = {  # Level: Experience needed to reach that level
     1: 0,
     2: 30,
     3: 90,

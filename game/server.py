@@ -33,7 +33,7 @@ def init(client, world_name=None):
     random.seed(0)
 
     worlds = load_worlds(TWINE_ARCHIVE)
-    if world_name == None:
+    if world_name is None:
         world_name = list(worlds.keys())[0]
     world = worlds[world_name]
     first_level = list(world)[0]
@@ -48,7 +48,7 @@ def init(client, world_name=None):
         'player': player,
         'world_name': world_name,
         'world': world,
-        'level': first_level, # start on first level
+        'level': first_level,  # start on first level
         'status': '<init>',
         'history': (-1, []),
     }
@@ -61,9 +61,11 @@ def run():
     model = None
     while True:
         new_client = get_new_client(server)
-        if new_client != None:
+
+        if new_client is not None:
             model = init(new_client)
-        if model == None:
+
+        if model is None:
             continue
         
         # listen for message
@@ -76,13 +78,15 @@ def run():
 
 # model -> message -> model
 def handle_message(model, message):
-    m = model
     if message in SYSTEM_CODES.values():
         model = handle_special_code(model, message)
-    elif model['player'].current_enemy == None:
+
+    elif model['player'].current_enemy is None:
         model = handle_choice(model, message)
+
     else:
         model = handle_repartee(model, message)
+
     model = update_history(model, message)
     return model
 
@@ -167,17 +171,20 @@ def handle_repartee(model, message):
     
     if enemy.hp <= 0:
         # victory
-        m['player'].xp += enemy.xp
-        m['player'].current_enemy = None
+        m['player'].gain_xp(enemy)
+        m['player'].end_encounter()
         m['status'] = 'Victory!'
+
     else:
         # death
         enemy_insult = enemy.respond()
         m['player'].take_mental_damage(enemy_insult)
+
         if m['player'].hp <= 0:
-            m['player'].current_enemy = None
             transition(model, 'hell')
             m['status'] = 'Death.'
+            m['player'].end_encounter()
+
         else:
             # hack to show enemy insult
             m['status'] = f'Enemy says {enemy_insult}'
@@ -209,10 +216,10 @@ def format_header(model):
     }
 
     enemy = m['player'].current_enemy
-    if enemy != None:
+    if enemy is not None:
         info['ENEMY HP'] = enemy.hp
 
-    return ' | '.join([f'{k}={v}' for k,v in info.items()])
+    return ' | '.join([f'{k}={v}' for k, v in info.items()])
 
 
 def send_model(model):
@@ -227,7 +234,7 @@ def send_model(model):
     
     # determine user's text choices
     level = m['world'][m['level']]
-    if m['player'].current_enemy == None:
+    if m['player'].current_enemy is None:
         content['choices'] = [x[0] for x in level['links']]
     else:
         from game import cfg
