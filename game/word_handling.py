@@ -4,6 +4,14 @@ import pandas as pd
 import numpy as np
 
 
+def load_insults_vectors() -> dict :
+    """Reads local insults vector file and return dictionary with words as keys and vectors as values"""
+    df = pd.read_csv('resources/insult_vectors.csv', delimiter='\t', header=None, index_col=0).T
+    return {col: df[col].values for col in df}
+
+dic = load_insults_vectors()
+
+
 # Initialize database
 def init_word_scores():
     import gensim.downloader as api
@@ -12,13 +20,13 @@ def init_word_scores():
 
 def calc_similarity(word1: str, word2: str) -> float:
     """Calculate the similarity between two insults/words"""
-    dic = load_insults_vectors()
+    #dic = load_insults_vectors()
     return round(abs(sum(dic[word1] / (sum(dic[word1] ** 2) ** 0.5) * dic[word2] / (sum(dic[word2] ** 2) ** 0.5))), 4)
 
 
 def create_ranking(word: str) -> list:
     """Calculate rank of insult compared to all other insults that you can use"""
-    dic = load_insults_vectors()
+    #dic = load_insults_vectors()
     l = []
     for x in dic.keys():
         l.append((x, calc_similarity(word, x)))
@@ -59,7 +67,4 @@ def update_insult_vectors():
                 handle.write(f'\n')
 
 
-def load_insults_vectors() -> dict :
-    """Reads local insults vector file and return dictionary with words as keys and vectors as values"""
-    df = pd.read_csv('resources/insult_vectors.csv', delimiter='\t', header=None, index_col=0).T
-    return {col: df[col].values for col in df}
+
