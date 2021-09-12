@@ -1,22 +1,25 @@
 import json
 import socket
+import re
 
 from curtsies import FullscreenWindow, Input, FSArray
 from curtsies.fmtfuncs import red, blue, bold, green, on_blue, yellow, cyan, magenta
 
 from game.comm import connect_socket, send_start, send_string, receive_string
 from game.constants import *
+from game import cfg
 
 
 def init():
     model = {
+        # choices or grammar
+        'response': ('choices', ['CHOICE_0', 'CHOICE_1']),
         'description': 'DESCRIPTION',
         'header': 'HEADER',
         'buffer': '',
         'last': '',
         'log': '',
         'candidates': [],
-        'choices': ['CHOICE_0', 'CHOICE_1'],
         'socket': None,
         'history': (-1, []),
     }
@@ -78,29 +81,46 @@ def level_start(model, content):
 
 def handle_key(model, c):
     m = model
-
+    response_type = m['response'][0]
+    send = None
     if c == None:
         pass
     elif c in SYSTEM_CODES:
-        send_string(m['socket'], SYSTEM_CODES[c])
-    elif c == '<BACKSPACE>':
+        send = SYSTEM_CODES[c]
+    elif response_type == 'grammar':
+        # special grammar buffer handling
+        grammar = m['response'][1]
+        new_buffer, send = update_buffer_grammar(grammar, m['buffer'], c)
+        m['buffer'] = new_buffer
+    elif response_type == 'choices':
+        # regular buffer handling
+        m, send = update_buffer_choices(m, c)
+    if send != None:
+        send_string(m['socket'], send)
+    return m
+
+
+def update_buffer_choices(model, c):
+    m = model
+    send = None
+    choices = model['response'][1]
+    if c == '<BACKSPACE>':
         m['buffer'] = m['buffer'][:-1]
     # if complete or uniquely autocompleted, send buffer as message to server
     elif c == '<SPACE>':
-        m = update_candidates(m)
+        m['candidates'] = [x for x in choices if x.lower().startswith(m['buffer'])]
         if len(m['candidates']) == 1:
             m['buffer'] = m['candidates'][0]
-        if m['buffer'] in m['choices']:
+        if m['buffer'] in choices:
             word = m['buffer']
             m['last'] = word
             m['buffer'] = ''
-            m['candidates'] = m['choices']
-            send_string(m['socket'], word)
-    elif any(x.lower().startswith(m['buffer'] + c.lower()) for x in m['choices']):
+            m['candidates'] = choices
+            send = word
+    elif any(x.lower().startswith(m['buffer'] + c.lower()) for x in choices):
         m['buffer'] = (m['buffer'] + c).lower()
-        m = update_candidates(m)
-
-    return m
+        m['candidates'] = [x for x in choices if x.lower().startswith(m['buffer'])]
+    return m, send
 
 
 def send_last(model):
@@ -153,10 +173,69 @@ def format_history(history):
 
     return rows
 
+
+def update_buffer_grammar(grammar, buffer, character):
+    """Almost identical to old Elm Typewriter. Except <DELETE>
+    backspace to delete entire word.
+    """
+    pat = '(\w+ )'
+    completed_words = [x.strip() for x in re.findall(pat, buffer)]
+    choices = cfg.choices(grammar, completed_words)
+    word_in_progress = buffer.split(' ')[-1]
+    candidates = [x for x in choices if x.startswith(word_in_progress)]
+    if word_in_progress:
+        buffer_minus_word = buffer[:-len(word_in_progress)]
+    else:
+        buffer_minus_word = buffer
+    ready_to_send = cfg.is_complete(grammar, completed_words)
+
+    print(buffer)
+    print(buffer_minus_word)
+    print(word_in_progress)
+
+    send = None
+    # autocomplete if there's only one word, and space is hit
+    if character == '<SPACE>':
+        if ready_to_send and word_in_progress == '':
+            send = buffer_minus_word.strip()
+            new_buffer = ''  
+        elif len(candidates) == 1:
+            new_buffer = buffer_minus_word + candidates[0] + ' '
+    elif character == '<BACKSPACE>':
+        if word_in_progress == '':
+            new_buffer = buffer[:-2]
+        else:
+            new_buffer = buffer[:-1]
+    elif character == '<DELETE>':
+        if word_in_progress:
+            new_buffer = buffer_minus_word
+        else:
+            new_buffer = ' '.join(completed_words[:-1])
+    else:
+        possible = word_in_progress + character
+        for x in candidates:
+            if x.lower().startswith(possible.lower()):
+                new_buffer = buffer_minus_word + x[:len(word_in_progress) + 1]
+                break
+        else:
+            # no match, no update
+            new_buffer = buffer
+    return new_buffer, send
+
+
 def update_candidates(model):
-    model['candidates'] = [x for x in model['choices'] 
-                           if x.lower().startswith(model['buffer'])]
-    return model
+    m = model
+    if m['response'][0] == 'grammar':
+        grammar = m['response'][1]
+        pat = '(\w+ )'
+        completed_words = [x.strip() for x in re.findall(pat, m['buffer'])]
+        word_in_progress = m['buffer'].split(' ')[-1]
+        choices = cfg.choices(grammar, completed_words)
+        m['candidates'] = [x for x in choices if x.startswith(word_in_progress)]
+    elif m['response'][0] == 'choices':
+        choices = m['response'][1]
+        m['candidates'] = [x for x in choices if x.startswith(m['buffer'])]
+    return m
 
 
 if __name__ == '__main__':

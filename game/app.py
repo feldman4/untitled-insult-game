@@ -1,5 +1,6 @@
 import fire
 
+from game.constants import VOCAB_FILE
 
 def term():
     """curtsies front end
