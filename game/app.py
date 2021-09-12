@@ -22,12 +22,16 @@ def update_vocab():
 
     sheet_id = '1lkxMe_MYYsi8ecTe-otTqaHLAuM0Mu2ALTNaIzZANrI'
     sheet_name = 'grammars'
-    url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
-    (pd.read_csv(url)
+    download_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+    browser_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit'
+
+    # https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=409890937
+
+    (pd.read_csv(download_url)
     .dropna(axis=1, how='all')
     .to_csv(local, index=None))
     print(f'Loaded vocab to {local}')
-    print(f'Google link: {url}')
+    print(f'From google sheet: {browser_url}')
 
 
 def twine():
