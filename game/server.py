@@ -230,7 +230,8 @@ def send_model(model):
     if m['player'].current_enemy == None:
         content['choices'] = [x[0] for x in level['links']]
     else:
-        content['choices'] = model['player'].vocabulary
+        from game import cfg
+        content['grammar'] = cfg.load_grammar_level2()
 
     msg = json.dumps({
         'kind': 'model_send',
