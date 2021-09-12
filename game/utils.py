@@ -1,7 +1,5 @@
 """Helpful utility methods."""
 
-import os
-
 import pandas as pd
 
 from game.constants import VOCAB_FILE
@@ -9,6 +7,8 @@ from game.constants import VOCAB_FILE
 
 def read_vocab(input_filter: str = None) -> pd.DataFrame:
     """Downloads the vocab CSV if not there and returns the dataframe. Can filter the DF by input type."""
+    import os
+
     if not os.path.isfile(VOCAB_FILE):
         update_vocab()
 

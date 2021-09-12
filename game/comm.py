@@ -2,16 +2,17 @@ import socket as socket_lib
 
 from game.constants import *
 
+
 def connect_socket():
     client = socket_lib.socket()
-    address=("localhost", PORT)
+    address = ("localhost", PORT)
     client.settimeout(TIMEOUT)
     client.connect(address)
     return client
 
 
 def send_string(socket, s):
-    if socket == None:
+    if socket is None:
         return
     try:
         socket.send(s.encode())

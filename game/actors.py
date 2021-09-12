@@ -4,7 +4,7 @@ from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
 from game.utils import read_vocab
-from game.constants import level_mapper, PERSONALITY, INTELLIGENCE
+from game.constants import level_mapper, VULNERABLE_MODIFIER
 
 
 class Actor(metaclass=ABCMeta):
@@ -14,6 +14,16 @@ class Actor(metaclass=ABCMeta):
         self.weakness = weakness
         self._vocab_dict = read_vocab(input_filter="N")  # Only nouns
 
+    @property
+    def hp(self) -> int:
+        """Get the HP value."""
+        return self.hp
+
+    @hp.setter
+    def hp(self, value: int):
+        """Manually set the HP."""
+        self.hp = value
+
     def take_mental_damage(self, insult: str):
         """Take a certain amount of mental damage. If damage type matches weakness, take double damage."""
         dmg_data = self._vocab_dict.loc[self._vocab_dict["output"] == insult, ["damage", "damage_type"]]
@@ -21,7 +31,7 @@ class Actor(metaclass=ABCMeta):
         damage_type = dmg_data.damage_type.iloc[0]
 
         if damage_type == self.weakness:
-            self.hp -= 1.5 * damage_value
+            self.hp -= round(VULNERABLE_MODIFIER * damage_value)
 
         else:
             self.hp -= damage_value
@@ -51,15 +61,28 @@ class Player(Actor):
         super().__init__(hp=hp, weakness=weakness)
         self.level = level
         self.xp = level_mapper[self.level]
-        self.vocabulary = self._vocab_dict.loc[
-            (self._vocab_dict['level'] <= self.level) & (self._vocab_dict['input'] == "N")
-            ].output.to_list()
+        self.vocabulary = self._vocab_dict.loc[(self._vocab_dict['level'] <= self.level)].output.to_list()
 
+        # Battle attributes
+        # self.in_encounter = False
         self.current_enemy = None
+        self.encounter_responses = None
 
-    def trigger_encounter(self, target: Enemy):
-        """Set encounter state to True."""
-        self.repartee(target=target)
+        self._response_history = []  # Used for player stats
+
+    # def trigger_encounter(self, target: Enemy):
+    #     """Set encounter state to True."""
+    #     self.in_encounter = True
+
+    def end_encounter(self):
+        """End encounter, add responses to player history, and clear battle insult history."""
+        self.current_enemy = None
+        # self.in_encounter = False
+
+        if self.encounter_responses:  # Add to full response history for player stats
+            self._response_history += self.encounter_responses
+
+        self.encounter_responses = None
 
     def check_level_up(self):
         """Checks current XP against requirements for leveling up."""
@@ -99,9 +122,6 @@ class Player(Actor):
         print(" ".join(allowed_words))
         player_input = input("Please enter your insult: ")
 
-        # For testing
-        # player_input = "fatso"
-
         while player_input not in allowed_words:
             print(f"Word not allowed! Please choose from the following: {' '.join(allowed_words)}")
             player_input = input("New insult: ")
@@ -110,7 +130,7 @@ class Player(Actor):
 
 
 if __name__ == "__main__":
-    player = Player(hp=100, weakness=INTELLIGENCE)
-    enemy = Enemy(hp=10, xp=50, weakness=PERSONALITY)
+    player = Player(hp=100, weakness="intelligence")
+    enemy = Enemy(hp=10, xp=50, weakness="personality")
 
     player.trigger_encounter(enemy)
