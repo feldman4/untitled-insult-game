@@ -1,14 +1,23 @@
 import pandas as pd
 
+# URLs
 TWINE_ARCHIVE = 'DF/worlds/*.html'
+VOCAB_FILE = "resources/vocab.csv"
 
+# Server settings
 PORT = 1241
 TIMEOUT = 0.01
 
+# String constants
 REWIND = 'REWIND'
 FFORWARD = 'FFORWARD'
 SYNCHRONIZE = 'SYNCHRONIZE'
 
+INTELLIGENCE = "intelligence"
+WEIGHT = "weight"
+PERSONALITY = "personality"
+
+# Server messages
 LOAD_1 = 'LOAD 1'
 LOAD_2 = 'LOAD 2'
 LOAD_3 = 'LOAD 3'
@@ -27,22 +36,7 @@ SYSTEM_CODES = {
     '9': SYNCHRONIZE,
 }
 
-INTELLIGENCE = "intelligence"
-WEIGHT = "weight"
-PERSONALITY = "personality"
-
-
-vocab_dict = pd.DataFrame(
-    [
-        {"word": "idiot", "level": 1, "damage": 3, "damage_type": INTELLIGENCE},
-        {"word": "fatso", "level": 1, "damage": 5, "damage_type": WEIGHT},
-        {"word": "streber", "level": 1, "damage": 7, "damage_type": PERSONALITY},
-        {"word": "swine", "level": 2, "damage": 6, "damage_type": WEIGHT},
-        {"word": "ignoramous", "level": 2, "damage": 5, "damage_type": INTELLIGENCE},
-        {"word": "pariah", "level": 2, "damage": 7, "damage_type": PERSONALITY},
-    ]
-)
-
+# Mappers
 level_mapper = {
     1: 0,
     2: 30,

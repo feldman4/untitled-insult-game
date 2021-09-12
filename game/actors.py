@@ -1,10 +1,16 @@
 import random
 
+import pandas as pd
+
 from typing import Tuple
 from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
-from game.constants import vocab_dict, level_mapper, PERSONALITY, INTELLIGENCE, WEIGHT
+from game.constants import level_mapper, PERSONALITY, INTELLIGENCE, VOCAB_FILE
+
+
+vocab_df = pd.read_csv(VOCAB_FILE)
+vocab_dict = vocab_df.loc[vocab_df["rule"] == "vocabulary"]
 
 
 class Actor(metaclass=ABCMeta):
@@ -15,7 +21,7 @@ class Actor(metaclass=ABCMeta):
 
     def take_mental_damage(self, insult: str):
         """Take a certain amount of mental damage. If damage type matches weakness, take double damage."""
-        dmg_data = vocab_dict.loc[vocab_dict["word"] == insult, ["damage", "damage_type"]]
+        dmg_data = vocab_dict.loc[vocab_dict["output"] == insult, ["damage", "damage_type"]]
         damage_value = dmg_data.damage.iloc[0]
         damage_type = dmg_data.damage_type.iloc[0]
 
@@ -40,7 +46,7 @@ class Enemy(Actor):
     @staticmethod
     def respond() -> str:
         """Randomly selects from allowed insults and returns insult, damage value, and damage type."""
-        options = list(vocab_dict.word)
+        options = list(vocab_dict.output)
         response_choice = random.choice(options)
         return response_choice
 
@@ -51,7 +57,9 @@ class Player(Actor):
         super().__init__(hp=hp, weakness=weakness)
         self.level = level
         self.xp = level_mapper[self.level]
-        self.vocabulary = vocab_dict.loc[vocab_dict['level'] <= self.level, ["word"]].word.to_list()
+        self.vocabulary = vocab_dict.loc[
+            (vocab_dict['level'] <= self.level) & (vocab_dict['input'] == "N")
+        ].output.to_list()
 
         self.current_enemy = None
 
@@ -64,7 +72,7 @@ class Player(Actor):
         if self.xp >= level_mapper[self.level + 1]:
             self.level += 1
             print(f"LEVEL UP: {self.level}")
-            self.vocabulary += vocab_dict.loc[vocab_dict['level'] == self.level, ["word"]].word.to_list()
+            self.vocabulary += vocab_dict.loc[vocab_dict['level'] == self.level].output.to_list()
 
     def repartee(self, target: Enemy):
         """Main verbal battle method."""
@@ -100,7 +108,7 @@ class Player(Actor):
         # For testing
         # player_input = "fatso"
 
-        while player_input.lower() not in allowed_words:
+        while player_input not in allowed_words:
             print(f"Word not allowed! Please choose from the following: {' '.join(allowed_words)}")
             player_input = input("New insult: ")
 
