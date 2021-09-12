@@ -61,5 +61,5 @@ def update_insult_vectors():
 
 def load_insults_vectors() -> dict :
     """Reads local insults vector file and return dictionary with words as keys and vectors as values"""
-    df = pd.read_csv('resources/insult_vectors.csv', delimiter='\t', header=None, index_col=0)
-    return {ind: np.array(row) for ind, row in df.iterrows()}
+    df = pd.read_csv('resources/insult_vectors.csv', delimiter='\t', header=None, index_col=0).T
+    return {col: df[col].values for col in df}
