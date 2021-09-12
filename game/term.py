@@ -26,7 +26,9 @@ def init():
 def run():
     model = init()
     history = []
-
+    with open('logs/term', 'w') as fh:
+        print('started', file=fh)
+        print('model', model, file=fh)
     with FullscreenWindow() as window, Input() as input_generator:
 
         while True:
@@ -114,7 +116,7 @@ def view(model, window):
     m = model
     h, w = window.height, window.width
     a = FSArray(h, w)
-    with open('logs/view', 'w') as fh:
+    with open('logs/term', 'a') as fh:
         print('model', m, file=fh)
     rows = [
         red(' '*w),

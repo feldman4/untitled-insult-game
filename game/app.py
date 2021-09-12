@@ -39,5 +39,6 @@ def twine():
         print(f'Converting {f}')
         subprocess.check_output(['twine_graph', f])
 
+
 if __name__ == '__main__':
     fire.Fire()
