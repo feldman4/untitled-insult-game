@@ -6,7 +6,11 @@ import numpy as np
 
 def load_insults_vectors() -> dict :
     """Reads local insults vector file and return dictionary with words as keys and vectors as values"""
-    df = pd.read_csv('resources/insult_vectors.csv', delimiter='\t', header=None, index_col=0).T
+    f = 'resources/insult_vectors.csv'
+    df = pd.read_csv(f, delimiter='\t', header=None, index_col=0).T
+    # some duplicates snuck in
+    keep = ~df.columns.duplicated()
+    df = df.iloc[:, keep]
     return {col: df[col].values for col in df}
 
 dic = load_insults_vectors()
@@ -31,24 +35,29 @@ def create_ranking(word: str) -> list:
     for x in dic.keys():
         l.append((x, calc_similarity(word, x)))
     l_s = sorted(l, key=lambda y: y[1])
-    return [p[0] for p in l_s]
+    return [p[0] for p in l_s][::-1]
 
 
 def calc_total_dmg_mod(word1: str, word2: str) -> float:
     """Calculate damage modifier for two words, always between 0 and 2"""
     ranking = create_ranking(word2)
-    ranking_mod = math.log10(ranking.index(word1) + 0.001) / math.log10(len(ranking))
-    similarity_mod = calc_similarity(word1, word2)
+    on_target = math.log10(1 + ranking.index(word1))
+    everything = math.log10(len(ranking))
 
+    ranking_mod = 1 - on_target / everything
+    similarity_mod = calc_similarity(word1, word2)
     return round((ranking_mod + similarity_mod) /2, 3)
 
 
 def multi_word_dmg(attack: list, defense: list) -> float:
     """If multiple words hit"""
+    assert 0 < len(attack)
+    assert 0 < len(defense)
     l = []
     for word1 in attack:
         for word2 in defense:
             l.append(calc_total_dmg_mod(word1, word2))
+    return round(sum(l), 3)
     return round(sum(l) / len(l), 3)
 
 

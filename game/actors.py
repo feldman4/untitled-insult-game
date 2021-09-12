@@ -57,10 +57,14 @@ class Actor(metaclass=ABCMeta):
     def take_mental_damage2(self, insult: str) -> None:
         from game.word_handling import multi_word_dmg
         from game.utils import get_dmg_map
-        dmg_mod = multi_word_dmg(insult.split(), self.weakness)
+        insult = insult.split()
+        dmg_mod = multi_word_dmg(insult, self.weakness)
         dmg_map = get_dmg_map()
+        dmg = max(dmg_map.get(x, 0) for x in insult)
+        print(dmg_mod, dmg)
 
-        self.hp -= (max(dmg_map.get(x, 0) for x in insult)*dmg_mod)
+        # dmg_mod is 0 to 1 (fraction of extra damage)
+        self.hp -= dmg * (1 + 2*dmg_mod)
         self.encounter_responses.append(insult)
 
     @staticmethod
