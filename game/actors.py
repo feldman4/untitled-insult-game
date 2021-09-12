@@ -5,27 +5,30 @@ from collections import Counter
 from pygments.console import colorize
 from abc import ABCMeta, abstractmethod
 
-from game.utils import read_vocab, calc_similarity_modifier
+from game.utils import read_vocab, calc_similarity_modifier, get_grammar
 from game.constants import level_mapper, VULNERABLE_MODIFIER
+from game.cfg import get_all_insults
 
 
 class Actor(metaclass=ABCMeta):
 
-    def __init__(self, hp: int, weakness: str = None):
+    def __init__(self, hp: int, classification: str, weakness: list = None, ):
         self.hp = hp
         self.weakness = weakness
         self.encounter_responses = []
         self._vocab_dict = read_vocab()
+        self.grammar = get_grammar(classification)
+        self.vocabulary = get_all_insults(self.grammar)
 
-    @property
-    def hp(self) -> int:
-        """Get the HP value."""
-        return self.hp
+    #@property
+    #def hp(self) -> int:
+    #    """Get the HP value."""
+    #    return self.hp
 
-    @hp.setter
-    def hp(self, value: int) -> None:
-        """Manually set the HP."""
-        self.hp = value
+    #@hp.setter
+    #def hp(self, value: int) -> None:
+    #    """Manually set the HP."""
+    #    self.hp = value
 
     def get_current_responses(self) -> Counter:
         """Returns of counter of responses used during current combat. If None, then actor not in combat."""
@@ -51,6 +54,15 @@ class Actor(metaclass=ABCMeta):
 
         self.encounter_responses.append(insult)  # Add insult to list of previously heard ones
 
+    def take_mental_damage2(self, insult: str) -> None:
+        from game.word_handling import multi_word_dmg
+        from game.utils import get_dmg_map
+        dmg_mod = multi_word_dmg(insult.split(), self.weakness)
+        dmg_map = get_dmg_map()
+
+        self.hp -= (max(dmg_map.get(x, 0) for x in insult)*dmg_mod)
+        self.encounter_responses.append(insult)
+
     @staticmethod
     @abstractmethod
     def respond():
@@ -59,8 +71,8 @@ class Actor(metaclass=ABCMeta):
 
 class Enemy(Actor):
 
-    def __init__(self, hp: int, xp: int, weakness: str):
-        super().__init__(hp=hp, weakness=weakness)
+    def __init__(self, hp: int, xp: int, classification: str, weakness: list):
+        super().__init__(hp=hp, classification=classification, weakness=weakness)
         self.xp_worth = xp
 
     def respond(self) -> str:
@@ -72,11 +84,11 @@ class Enemy(Actor):
 
 class Player(Actor):
 
-    def __init__(self, hp: int, weakness: str, level: int = 1):
-        super().__init__(hp=hp, weakness=weakness)
+    def __init__(self, hp: int, classification: str, weakness: list, level: int = 1):
+        super().__init__(hp=hp, classification=classification, weakness=weakness)
         self.level = level
         self.xp = level_mapper[self.level]
-        self.vocabulary = self._vocab_dict.loc[(self._vocab_dict['level'] <= self.level)].output.to_list()
+        #self.vocabulary = self._vocab_dict.loc[(self._vocab_dict['level'] <= self.level)].output.to_list()
 
         # Battle attributes
         # self.in_encounter = False
@@ -147,7 +159,7 @@ class Player(Actor):
 
 
 if __name__ == "__main__":
-    player = Player(hp=100, weakness="intelligence")
-    enemy = Enemy(hp=10, xp=50, weakness="personality")
+    player = Player(hp=100, classification='idiot == "x"', weakness=["intelligence"])
+    enemy = Enemy(hp=10, xp=50, classification='idiot == "x"', weakness=["personality"])
 
     player.repartee(enemy)
