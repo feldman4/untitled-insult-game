@@ -53,3 +53,23 @@ def update_vocab_and_vectors():
     from game.word_handling import update_insult_vectors
     update_vocab()
     update_insult_vectors()
+
+
+def get_grammar(query_string: str):
+    """Returns grammar that player/enemy can use"""
+
+    from game.cfg import dataframe_to_grammar
+    import os
+
+    if not os.path.isfile(VOCAB_FILE):
+        update_vocab()
+
+    df = pd.read_csv('resources/vocab.csv').query(query_string)
+    grammar = dataframe_to_grammar(df)
+    return grammar
+
+def get_dmg_map() -> dict:
+    df = pd.read_csv('resources/vocab.csv')
+
+    return df.set_index('output')['damage'].dropna().to_dict()
+
