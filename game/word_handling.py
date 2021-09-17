@@ -1,6 +1,7 @@
 import math
 import pandas as pd
 
+from game.constants import VOCAB_FILE, VECTOR_FILE
 
 
 def load_insults_vectors() -> dict :
@@ -61,9 +62,9 @@ def update_insult_vectors():
     """Update insult vector list spreadsheet got updated"""
 
     model = init_word_scores()
-    df = pd.read_csv('resources/vocab.csv')
+    df = pd.read_csv(VOCAB_FILE)
 
-    with open('resources/insult_vectors.csv', 'w') as handle:
+    with open(VECTOR_FILE, 'w') as handle:
         for ins in df[df.rule == 'vocabulary']['output']:
             if ins.lower() in model:
                 handle.write(f'{ins}')

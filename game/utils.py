@@ -50,6 +50,7 @@ def update_vocab():
 
 
 def update_vocab_and_vectors():
+    """Download vocabulary, then update word vector file."""
     from game.word_handling import update_insult_vectors
     update_vocab()
     update_insult_vectors()

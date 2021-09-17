@@ -2,7 +2,8 @@ import pandas as pd
 
 # URLs
 TWINE_ARCHIVE = 'DF/worlds/*.html'
-VOCAB_FILE = "resources/vocab.csv"
+VOCAB_FILE = 'resources/vocab.csv'
+VECTOR_FILE = 'resources/insult_vectors.csv'
 
 # Server settings
 PORT = 1241
