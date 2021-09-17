@@ -2,8 +2,11 @@ import pandas as pd
 
 # URLs
 TWINE_ARCHIVE = 'DF/worlds/*.html'
-VOCAB_FILE = 'resources/vocab.csv'
 VECTOR_FILE = 'resources/insult_vectors.csv'
+VOCAB_CSV = 'resources/vocab.csv'
+VOCAB_XLSX = 'resources/vocab.xlsx'
+VOCAB_SHEET_ID = '1lkxMe_MYYsi8ecTe-otTqaHLAuM0Mu2ALTNaIzZANrI'
+VOCAB_XLSX_URL = f'https://docs.google.com/spreadsheets/d/{VOCAB_SHEET_ID}/pub?output=xlsx'
 
 # Server settings
 PORT = 1241

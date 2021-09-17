@@ -146,5 +146,6 @@ test.html
 logs/
 DF/worlds/
 resources/vocab.csv
+resources/vocab.xlsx
 # symlink
 s
