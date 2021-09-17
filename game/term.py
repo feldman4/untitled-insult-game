@@ -125,15 +125,6 @@ def update_buffer_choices(model, c):
     return m, send
 
 
-def send_last(model):
-    m = model
-    if m['socket'] != None:
-        try:
-            m['socket'].send(m['last'].encode())
-        except socket.timeout:
-            pass
-
-
 def update_buffer_grammar(grammar, buffer, character):
     """Almost identical to old Elm Typewriter. Except <DELETE>
     backspace to delete entire word.
