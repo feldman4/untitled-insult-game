@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-cd DF/notebooks
-jupyter lab
+jupyter lab --notebook-dir=DF/notebooks
