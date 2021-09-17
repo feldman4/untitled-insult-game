@@ -19,5 +19,13 @@ enemies = {
                              classification='postman == "x"', weakness=['Loser', 'Human', 'Luckless', 'Disorganized']),
     'reviewer': lambda: Enemy(hp=150, xp=1030, name='Mrs. Licky',
                               classification='reviewer == "x"', weakness=['Traditionalist', 'Intellectual', 'Hairless',
-                                                                          'Careless'])
+                                                                          'Careless']),
+
+    'beach_greg': lambda: Enemy(hp=45, xp=90, name='Beach Greg',
+                               classification='beach_greg == "x"', weakness=['Human', 'Luckless', 'Weasel', 'Lonely']),
+    'mall_greg': lambda: Enemy(hp=45, xp=90, name='Mall Greg',
+                               classification='mall_greg == "x"', weakness=['Human', 'Luckless', 'Weasel', 'Lonely']),
+    'store_greg': lambda: Enemy(hp=45, xp=90, name='Store Greg',
+                               classification='store_greg == "x"', weakness=['Human', 'Luckless', 'Weasel', 'Lonely']),
+
 }
