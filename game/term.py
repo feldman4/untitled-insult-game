@@ -4,7 +4,7 @@ import re
 
 from curtsies import FullscreenWindow, Input
 
-from game.comm import connect_socket, send_start, send_string, receive_string
+from game.comm import connect_socket, send_string, receive_string
 from game.constants import *
 from game import cfg
 
@@ -41,7 +41,7 @@ def run():
                 try:
                     model['socket'] = connect_socket()
                     send_string(model['socket'], LOAD_1)
-                except (socket.timeout, ConnectionRefusedError):
+                except (socket.timeout, ConnectionRefusedError, BrokenPipeError):
                     model['socket'] = None
             handle_incoming(model)
             
@@ -98,7 +98,10 @@ def handle_key(model, c):
         # regular buffer handling
         m, send = update_buffer_choices(m, c)
     if send != None:
-        send_string(m['socket'], send)
+        try:
+            send_string(m['socket'], send)
+        except (socket.timeout, ConnectionRefusedError, BrokenPipeError):
+            m['socket'] = None  
     return m
 
 
